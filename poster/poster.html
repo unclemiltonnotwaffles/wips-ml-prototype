@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>WIPS Poster — A1</title>
+<style>
+  @page { size: 594mm 841mm; margin: 0; }
+  :root {
+    --ink: #0d0d0d; --muted: #4b5563; --accent: #4d6bfe;
+    --accent-soft: #eef2ff; --border: #d1d5db; --bg-soft: #f8fafc;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #e5e7eb; }
+  body { font-family: "Inter", "Segoe UI", system-ui, sans-serif; color: var(--ink); }
+  .page {
+    width: 594mm; height: 841mm; background: white; margin: 0 auto;
+    padding: 12mm; display: flex; flex-direction: column; gap: 6mm;
+    overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,.1);
+  }
+  header {
+    border-bottom: 2mm solid var(--accent); padding-bottom: 4mm;
+    display: flex; justify-content: space-between; align-items: flex-end;
+  }
+  header h1 { font-size: 22mm; line-height: 1.02; margin: 0; font-weight: 800; letter-spacing: -0.02em; }
+  header h1 .accent { color: var(--accent); }
+  header .sub { font-size: 5.5mm; color: var(--muted); margin-top: 3mm; max-width: 380mm; }
+  header .meta { text-align: right; font-size: 4mm; color: var(--muted); line-height: 1.5; }
+  header .meta strong { color: var(--ink); }
+  .body {
+    flex: 1; column-count: 3; column-gap: 8mm; column-fill: balance;
+    font-size: 3.6mm; line-height: 1.42;
+  }
+  .card {
+    break-inside: avoid; background: var(--bg-soft);
+    border: 0.4mm solid var(--border); border-radius: 3mm;
+    padding: 5mm; margin-bottom: 6mm; display: block;
+  }
+  .card h2 {
+    font-size: 5.4mm; margin: 0 0 3mm 0; color: var(--accent); font-weight: 700;
+    border-bottom: 0.3mm solid var(--border); padding-bottom: 2mm;
+  }
+  .card h3 { font-size: 4.2mm; margin: 4mm 0 1.5mm 0; font-weight: 700; }
+  .card p { margin: 0 0 2.5mm 0; }
+  .card p:last-child { margin-bottom: 0; }
+  ul { margin: 0 0 2.5mm 0; padding-left: 5mm; }
+  li { margin-bottom: 1.4mm; }
+  code {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    background: #eef0f4; padding: 0.2mm 1.2mm; border-radius: 1mm;
+    font-size: 3.2mm; color: #111827;
+  }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5mm; margin: 3mm 0; }
+  .stat { background: var(--accent-soft); border-radius: 2mm; padding: 3mm; text-align: center; }
+  .stat .v { font-size: 8mm; font-weight: 800; color: var(--accent); line-height: 1; }
+  .stat .l { font-size: 3mm; color: var(--muted); margin-top: 1mm; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  .cm {
+    display: grid; grid-template-columns: 18mm 1fr 1fr;
+    grid-template-rows: 8mm 1fr 1fr; gap: 1mm; font-size: 3mm;
+    text-align: center; margin: 3mm 0;
+  }
+  .cm .hdr { display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--muted); }
+  .cm .cell { display: flex; align-items: center; justify-content: center; border-radius: 1.5mm; font-weight: 700; padding: 3mm 0; font-size: 4.5mm; }
+  .cm .tp { background: #bfdbfe; color: #1e3a8a; }
+  .cm .tn { background: #dbeafe; color: #1e3a8a; }
+  .cm .fp { background: #fee2e2; color: #7f1d1d; }
+  .cm .fn { background: #fde68a; color: #78350f; }
+  .arch { display: flex; flex-direction: column; gap: 2mm; margin: 3mm 0; font-size: 3.2mm; }
+  .arch .box { background: white; border: 0.4mm solid var(--border); border-radius: 2mm; padding: 2.5mm; text-align: center; font-weight: 600; }
+  .arch .box small { display: block; font-weight: 400; color: var(--muted); font-size: 2.7mm; margin-top: 0.8mm; }
+  .arch .arrow { text-align: center; color: var(--accent); font-weight: 800; font-size: 4mm; line-height: 1; }
+  table { width: 100%; border-collapse: collapse; font-size: 3.1mm; margin: 2mm 0; }
+  th, td { text-align: left; padding: 1.6mm 1.5mm; border-bottom: 0.25mm solid var(--border); vertical-align: top; }
+  th { background: var(--accent-soft); color: #1e3a8a; font-weight: 700; font-size: 3mm; }
+  .timeline {
+    background: #0f172a; color: #e2e8f0; border-radius: 2mm; padding: 3mm;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 3mm; line-height: 1.55; margin: 2.5mm 0;
+  }
+  .timeline .warn { color: #fbbf24; }
+  .timeline .block { color: #f87171; font-weight: 700; }
+  .timeline .dim { color: #64748b; }
+  .ai-statement { background: #fef3c7; border-left: 2mm solid #f59e0b; padding: 3.5mm 4mm; border-radius: 0 2mm 2mm 0; font-size: 3.1mm; line-height: 1.45; }
+  .ai-statement strong { color: #92400e; }
+  footer { margin-top: auto; border-top: 0.4mm solid var(--border); padding-top: 3mm; font-size: 3mm; color: var(--muted); display: flex; justify-content: space-between; }
+  @media print { body { background: white; } .page { box-shadow: none; margin: 0; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div>
+      <h1>Wi-Fi Intrusion <span class="accent">Prevention</span> System</h1>
+      <div class="sub">A machine-learning prototype that detects deauthentication flood attacks and automatically blocks the offending MAC address.</div>
+    </div>
+    <div class="meta">
+      <strong>Author:</strong> Chiwo Newa<br>
+      <strong>Student ID:</strong> 190358<br>
+      <strong>Module:</strong> CNS 320;<br>
+      <strong>Date:</strong> 26 Oct 2026
+    </div>
+  </header>
+
+  <div class="body">
+
+    <div class="card">
+      <h2>1. The Problem</h2>
+      <p>A <strong>deauthentication flood</strong> is a trivial denial-of-service attack on 802.11: an attacker spoofs management frames to force every client off the network. It needs no password and no special hardware.</p>
+      <p>This project builds a transparent end-to-end prototype: <em>capture → features → ML → alert → block</em>, using a <strong>Random Forest</strong> classifier.</p>
+    </div>
+
+    <div class="card">
+      <h2>2. System Architecture</h2>
+      <div class="arch">
+        <div class="box">Packet source<small>synthetic · AWID3 CSV · monitor NIC</small></div>
+        <div class="arrow">↓</div>
+        <div class="box">Windowing<small>1-second buckets per (src MAC)</small></div>
+        <div class="arrow">↓</div>
+        <div class="box">Feature extraction<small>11 numeric features</small></div>
+        <div class="arrow">↓</div>
+        <div class="box">Random Forest<small>100 trees · depth 12 · balanced</small></div>
+        <div class="arrow">↓</div>
+        <div class="box" style="background:#eef2ff;border-color:#4d6bfe;">Blocklist<small>MAC added after 2 strikes</small></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>3. Features (why these 11?)</h2>
+      <p>Each window becomes one row. Ratios (not just counts) make the model <em>shape-aware</em> — a busy legitimate AP sends hundreds of frames/s too.</p>
+      <table>
+        <tr><th>Feature</th><th>Catches</th></tr>
+        <tr><td><code>deauth_count</code></td><td>the flood</td></tr>
+        <tr><td><code>deauth_ratio</code></td><td>burst <em>shape</em></td></tr>
+        <tr><td><code>frame_count</code></td><td>total rate</td></tr>
+        <tr><td><code>mgmt_ratio</code></td><td>data-starved flood</td></tr>
+        <tr><td><code>rssi_std</code></td><td>uniform-power burst</td></tr>
+        <tr><td><code>unique_dst</code></td><td>broadcast targeting</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>4. Results</h2>
+      <p>Evaluated on two independent data sources. Both achieved perfect detection, proving the pipeline generalises beyond synthetic quirks.</p>
+      
+      <h3>Synthetic Lab Traffic</h3>
+      <div class="stats" style="margin-top:1mm; margin-bottom:2mm;">
+        <div class="stat"><div class="v">100%</div><div class="l">Accuracy</div></div>
+        <div class="stat"><div class="v">100%</div><div class="l">Recall</div></div>
+      </div>
+      <div class="cm" style="margin-top:0;">
+        <div class="hdr"></div>
+        <div class="hdr">pred&nbsp;normal</div>
+        <div class="hdr">pred&nbsp;attack</div>
+        <div class="hdr">actual<br>normal</div>
+        <div class="cell tn">2,870</div>
+        <div class="cell fp">0</div>
+        <div class="hdr">actual<br>attack</div>
+        <div class="cell fn">0</div>
+        <div class="cell tp">32</div>
+      </div>
+
+      <h3 style="margin-top:4mm;">AWID3 Real-World Dataset</h3>
+      <div class="stats" style="margin-top:1mm; margin-bottom:2mm;">
+        <div class="stat"><div class="v">100%</div><div class="l">Accuracy</div></div>
+        <div class="stat"><div class="v">100%</div><div class="l">Recall</div></div>
+      </div>
+      <div class="cm" style="margin-top:0;">
+        <div class="hdr"></div>
+        <div class="hdr">pred&nbsp;normal</div>
+        <div class="hdr">pred&nbsp;attack</div>
+        <div class="hdr">actual<br>normal</div>
+        <div class="cell tn">326</div>
+        <div class="cell fp">0</div>
+        <div class="hdr">actual<br>attack</div>
+        <div class="cell fn">0</div>
+        <div class="cell tp">89</div>
+      </div>
+      <p style="font-size:3.1mm;color:var(--muted);margin-top:2mm;"><em>AWID3 run used 65,488 frames (20.8% attack) from the 1.Deauth subset.</em></p>
+    </div>
+
+    <div class="card">
+      <h2>5. The "P" in WIPS</h2>
+      <p>When a window is classified <em>attack</em>, the detector raises an alert and increments a <strong>strike counter</strong> for that MAC. After <strong>2 strikes</strong>, the MAC is written to a persistent blocklist.</p>
+      <div class="timeline">
+        <div class="dim">t=3s   normal traffic</div>
+        <div class="warn">t=47s  ⚠ ALERT  aa:bb:..:02  p=0.98</div>
+        <div class="warn">t=48s  ⚠ ALERT  aa:bb:..:02  p=0.97</div>
+        <div class="block">t=48s  🛡 BLOCK  aa:bb:..:02</div>
+      </div>
+      <p><strong>Why two strikes?</strong> One alert could be a false positive; two consecutive attacking windows from the same MAC is a very strong signal.</p>
+      <p><strong>Safety:</strong> <code>DRY_RUN=True</code> by default. On an authorised lab host, <code>_apply_block()</code> runs <code>iptables -I INPUT -m mac --mac-source &lt;mac&gt; -j DROP</code>.</p>
+    </div>
+
+    <div class="card">
+      <h2>6. Reproducibility</h2>
+      <ul>
+        <li>Random Forest, 100 trees, max depth 12, <code>class_weight="balanced"</code>.</li>
+        <li>Time-ordered 70/30 split — no attack episode appears in both halves.</li>
+        <li>Fixed seeds (<code>RANDOM_STATE=42</code>).</li>
+        <li>Tests: <code>python tests/test_features.py</code>.</li>
+        <li>Dataset-agnostic: same pipeline runs on AWID3 or synthetic traffic.</li>
+        <li><strong>Dataset:</strong> <a href="https://www.kaggle.com/datasets/thrilochananakkella/cyber-security" style="color:var(--accent);">AWID3-CSV (Kaggle)</a> / Official AWID3.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>7. Limitations &amp; Future Work</h2>
+      <h3>Limitations</h3>
+      <ul>
+        <li>Strong signal in <code>deauth_count</code>; other attacks need re-training.</li>
+        <li>Each window is scored independently.</li>
+        <li>Offline — reads CSVs; live capture needs a monitor-mode NIC.</li>
+      </ul>
+      <h3>Would improve</h3>
+      <ul>
+        <li>Rolling 5 s features to smooth isolated false positives.</li>
+        <li><code>CalibratedClassifierCV</code> for trustworthy probabilities.</li>
+        <li>Adversarial validation on disassoc / rogue-AP.</li>
+        <li>Active deauth back to the attacker (injection).</li>
+        <li>Streaming learner for concept drift.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>8. AI Assistant Use</h2>
+      <div class="ai-statement">
+        <strong>Declaration.</strong> An AI coding assistant (DeepSeek) was used for: initial project scaffolding, drafting the synthetic traffic simulator, first-pass hyperparameter suggestions, and drafting docstrings. All output was reviewed and tested by the author — notably the time-ordered split and the two-strike blocking policy replaced the assistant's weaker suggestions. The author can explain every line during the live demo.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>9. Live Demo</h2>
+      <ol style="margin:0;padding-left:5mm;">
+        <li><code>python -m src.run_demo</code> — trains on 10 min synthetic, replays a fresh attack.</li>
+        <li>Watch the alert timeline and blocklist grow.</li>
+        <li><code>python -m src.run_awid3 --data-dir …</code> — same pipeline, real dataset.</li>
+      </ol>
+      <p style="margin-top:2.5mm;font-size:3.1mm;color:var(--muted);">All traffic is synthetic or public AWID3. No live radio transmission by this code.</p>
+    </div>
+
+  </div>
+
+  <footer>
+    <div>Wi-Fi Intrusion Prevention System · Random Forest · AWID3 / synthetic</div>
+    <div>Code &amp; docs: <code>github.com/unclemiltonnotwaffles/wips-ml-prototype</code></div>
+  </footer>
+
+</div>
+</body>
+</html>
