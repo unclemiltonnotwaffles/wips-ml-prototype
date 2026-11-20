@@ -90,12 +90,11 @@
 
   <header>
     <div>
-      <h1>Wi-Fi Intrusion <span class="accent">Prevention</span> System</h1>
-      <div class="sub">A machine-learning prototype that detects deauthentication flood attacks and automatically blocks the offending MAC address.</div>
+      <h1>Wi-Fi Intrusion <span class="accent">Detection</span> &amp; Response Prototype</h1>
+      <div class="sub">An offline machine-learning prototype that identifies deauthentication-flood-like traffic and records alerts and proposed MAC blocklist entries.</div>
     </div>
     <div class="meta">
       <strong>Author:</strong> Chiwo Newa<br>
-      <strong>Student ID:</strong> 190358<br>
       <strong>Module:</strong> CNS 320;<br>
       <strong>Date:</strong> 26 Oct 2026
     </div>
@@ -106,7 +105,7 @@
     <div class="card">
       <h2>1. The Problem</h2>
       <p>A <strong>deauthentication flood</strong> is a trivial denial-of-service attack on 802.11: an attacker spoofs management frames to force every client off the network. It needs no password and no special hardware.</p>
-      <p>This project builds a transparent end-to-end prototype: <em>capture → features → ML → alert → block</em>, using a <strong>Random Forest</strong> classifier.</p>
+      <p>This project builds a transparent end-to-end prototype: <em>offline records → features → ML → alert → proposed blocklist</em>, using a <strong>Random Forest</strong> classifier.</p>
     </div>
 
     <div class="card">
@@ -116,7 +115,7 @@
         <div class="arrow">↓</div>
         <div class="box">Windowing<small>1-second buckets per (src MAC)</small></div>
         <div class="arrow">↓</div>
-        <div class="box">Feature extraction<small>11 numeric features</small></div>
+        <div class="box">Feature extraction<small>12 numeric features</small></div>
         <div class="arrow">↓</div>
         <div class="box">Random Forest<small>100 trees · depth 12 · balanced</small></div>
         <div class="arrow">↓</div>
@@ -140,55 +139,22 @@
 
     <div class="card">
       <h2>4. Results</h2>
-      <p>Evaluated on two independent data sources. Both achieved perfect detection, proving the pipeline generalises beyond synthetic quirks.</p>
-      
-      <h3>Synthetic Lab Traffic</h3>
-      <div class="stats" style="margin-top:1mm; margin-bottom:2mm;">
-        <div class="stat"><div class="v">100%</div><div class="l">Accuracy</div></div>
-        <div class="stat"><div class="v">100%</div><div class="l">Recall</div></div>
-      </div>
-      <div class="cm" style="margin-top:0;">
-        <div class="hdr"></div>
-        <div class="hdr">pred&nbsp;normal</div>
-        <div class="hdr">pred&nbsp;attack</div>
-        <div class="hdr">actual<br>normal</div>
-        <div class="cell tn">2,870</div>
-        <div class="cell fp">0</div>
-        <div class="hdr">actual<br>attack</div>
-        <div class="cell fn">0</div>
-        <div class="cell tp">32</div>
-      </div>
-
-      <h3 style="margin-top:4mm;">AWID3 Real-World Dataset</h3>
-      <div class="stats" style="margin-top:1mm; margin-bottom:2mm;">
-        <div class="stat"><div class="v">100%</div><div class="l">Accuracy</div></div>
-        <div class="stat"><div class="v">100%</div><div class="l">Recall</div></div>
-      </div>
-      <div class="cm" style="margin-top:0;">
-        <div class="hdr"></div>
-        <div class="hdr">pred&nbsp;normal</div>
-        <div class="hdr">pred&nbsp;attack</div>
-        <div class="hdr">actual<br>normal</div>
-        <div class="cell tn">326</div>
-        <div class="cell fp">0</div>
-        <div class="hdr">actual<br>attack</div>
-        <div class="cell fn">0</div>
-        <div class="cell tp">89</div>
-      </div>
-      <p style="font-size:3.1mm;color:var(--muted);margin-top:2mm;"><em>AWID3 run used 65,488 frames (20.8% attack) from the 1.Deauth subset.</em></p>
+      <p>Performance figures must be generated from the exact dataset and code revision being presented. This poster intentionally contains no hard-coded accuracy, recall, or confusion-matrix values.</p>
+      <p>Run <code>python -m src.run_demo</code> or the AWID3 pipeline, then use <code>results/metrics.json</code> and <code>results/confusion_matrix.png</code>. Report dataset version, capture selection, class counts, chronological split, and every confusion-matrix cell.</p>
+      <p><strong>Interpretation:</strong> synthetic results validate the software path only. They do not establish performance on real wireless networks or unseen devices.</p>
     </div>
 
     <div class="card">
       <h2>5. The "P" in WIPS</h2>
-      <p>When a window is classified <em>attack</em>, the detector raises an alert and increments a <strong>strike counter</strong> for that MAC. After <strong>2 strikes</strong>, the MAC is written to a persistent blocklist.</p>
+      <p>When a window is classified <em>attack</em>, the detector raises an alert and increments a <strong>strike counter</strong> for that MAC. After <strong>2 consecutive predicted attack windows</strong>, the MAC is written to a persistent proposed blocklist.</p>
       <div class="timeline">
         <div class="dim">t=3s   normal traffic</div>
         <div class="warn">t=47s  ⚠ ALERT  aa:bb:..:02  p=0.98</div>
         <div class="warn">t=48s  ⚠ ALERT  aa:bb:..:02  p=0.97</div>
         <div class="block">t=48s  🛡 BLOCK  aa:bb:..:02</div>
       </div>
-      <p><strong>Why two strikes?</strong> One alert could be a false positive; two consecutive attacking windows from the same MAC is a very strong signal.</p>
-      <p><strong>Safety:</strong> <code>DRY_RUN=True</code> by default. On an authorised lab host, <code>_apply_block()</code> runs <code>iptables -I INPUT -m mac --mac-source &lt;mac&gt; -j DROP</code>.</p>
+      <p><strong>Why two strikes?</strong> One alert could be a false positive; two consecutive evaluated attack windows are a policy threshold, not proof of malicious identity.</p>
+      <p><strong>Enforcement boundary:</strong> this offline prototype does not run firewall commands or block clients at an access point. The blocklist is advisory; real enforcement needs a separately tested AP/controller integration.</p>
     </div>
 
     <div class="card">
@@ -213,10 +179,10 @@
       </ul>
       <h3>Would improve</h3>
       <ul>
-        <li>Rolling 5 s features to smooth isolated false positives.</li>
+        <li>Validate calibration, tune thresholds on a separate validation set, and evaluate on unseen capture sessions.</li>
         <li><code>CalibratedClassifierCV</code> for trustworthy probabilities.</li>
         <li>Adversarial validation on disassoc / rogue-AP.</li>
-        <li>Active deauth back to the attacker (injection).</li>
+        <li>Authorised AP/controller integration with audit, expiry, and rollback safeguards.</li>
         <li>Streaming learner for concept drift.</li>
       </ul>
     </div>
@@ -224,7 +190,7 @@
     <div class="card">
       <h2>8. AI Assistant Use</h2>
       <div class="ai-statement">
-        <strong>Declaration.</strong> An AI coding assistant (DeepSeek) was used for: initial project scaffolding, drafting the synthetic traffic simulator, first-pass hyperparameter suggestions, and drafting docstrings. All output was reviewed and tested by the author — notably the time-ordered split and the two-strike blocking policy replaced the assistant's weaker suggestions. The author can explain every line during the live demo.
+        <strong>Declaration.</strong> An AI coding assistant (DeepSeek) was used for: initial project scaffolding, drafting the synthetic traffic simulator, first-pass hyperparameter suggestions, and drafting docstrings. All output was reviewed and tested by the author — notably the time-ordered split and the consecutive-window blocklist policy replaced the assistant's weaker suggestions. The author can explain every line during the live demo.
       </div>
     </div>
 

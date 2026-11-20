@@ -1,125 +1,113 @@
-"""
-features.py — turns packet records into ML-ready window features.
-
-This is the heart of the project. Every design choice here is explained
-because this is what the marker will actually ask about.
-
-Pipeline:
-    packets  →  (src, window_id) buckets  →  11 numeric features  →  label
-
-WHY window per (src, second) and not per-frame?
-    A single deauth frame is indistinguishable from a legitimate disconnect.
-    A *flood* is a rate phenomenon — it only becomes visible when you count
-    frames per unit time. Windowing converts "is this a flood?" into a normal
-    supervised-learning question on aggregated rows.
-"""
-
+"""Packet-to-window feature extraction for deauthentication-flood research."""
 from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-# The exact list of feature columns the model consumes.
-# WHY a module-level constant?  train.py, wips.py and tests all import it,
-# so feature order can never silently drift between training and inference
-# (a classic cause of "99 % train accuracy, 2 % production accuracy" bugs).
 FEATURE_COLUMNS = [
-    "frame_count",      # total frames from this MAC in the window
-    "deauth_count",     # how many are deauthentication frames
-    "disassoc_count",   # how many are disassociation frames
-    "deauth_ratio",     # deauth_count / frame_count — burst shape
-    "disassoc_ratio",   # same for disassoc
-    "mgmt_ratio",       # fraction of management frames (type 0)
-    "ctrl_ratio",       # fraction of control frames (type 1)
-    "data_ratio",       # fraction of data frames (type 2)
-    "rssi_mean",        # average signal strength (dBm)
-    "rssi_std",         # spread of signal strength — floods have very low spread
-    "unique_dst",       # distinct destinations — broadcast floods are 1
+    "frame_count", "deauth_count", "disassoc_count", "deauth_ratio",
+    "disassoc_ratio", "mgmt_ratio", "ctrl_ratio", "data_ratio",
+    "rssi_mean", "rssi_std", "unique_dst", "length_mean",
 ]
-
 DEAUTH_SUBTYPE = 12
 DISASSOC_SUBTYPE = 10
 
+
 def prepare_packet_flags(df: pd.DataFrame) -> pd.DataFrame:
-    """Add per-packet boolean flags used by the aggregator."""
-    df = df.copy()
-    df["is_mgmt"] = (df["fc_type"] == 0).astype(int)
-    df["is_ctrl"] = (df["fc_type"] == 1).astype(int)
-    df["is_data"] = (df["fc_type"] == 2).astype(int)
-    df["is_deauth"] = ((df["fc_type"] == 0) &
-                       (df["fc_subtype"] == DEAUTH_SUBTYPE)).astype(int)
-    df["is_disassoc"] = ((df["fc_type"] == 0) &
-                         (df["fc_subtype"] == DISASSOC_SUBTYPE)).astype(int)
-    return df
+    required = {"fc_type", "fc_subtype"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"Missing packet fields: {sorted(missing)}")
+    out = df.copy()
+    out["is_mgmt"] = (out["fc_type"] == 0).astype(int)
+    out["is_ctrl"] = (out["fc_type"] == 1).astype(int)
+    out["is_data"] = (out["fc_type"] == 2).astype(int)
+    out["is_deauth"] = ((out["fc_type"] == 0) & (out["fc_subtype"] == DEAUTH_SUBTYPE)).astype(int)
+    out["is_disassoc"] = ((out["fc_type"] == 0) & (out["fc_subtype"] == DISASSOC_SUBTYPE)).astype(int)
+    return out
 
-def build_window_features(
-    df: pd.DataFrame,
-    window_seconds: float = 1.0,
-    deauth_flood_min: int = 3,
-) -> pd.DataFrame:
-    """
-    Return a dataframe indexed by (src, window_id) with FEATURE_COLUMNS + label.
 
-    Label rules:
-      1. If `label` column exists and has any attack packets, a window is
-         attack if ANY packet in it was labelled attack.
-      2. Otherwise, a window is attack if it contains ≥ deauth_flood_min
-         deauth frames from the same source.
-    """
+def build_window_features(df: pd.DataFrame, window_seconds: float = 1.0,
+                           deauth_flood_min: int = 3) -> pd.DataFrame:
     if df.empty:
         raise ValueError("build_window_features received an empty dataframe")
-
-    df = prepare_packet_flags(df)
-
-    # WHY floor(ts / window) as window_id? Integer bucket ids are stable across
-    # files, so a window that straddles two CSVs still merges cleanly.
-    df["window_id"] = np.floor(df["timestamp"] / window_seconds).astype(np.int64)
-
-    g = df.groupby(["src", "window_id"], sort=True)
-
+    if window_seconds <= 0 or deauth_flood_min < 1:
+        raise ValueError("window_seconds and deauth_flood_min must be positive")
+    required = {"timestamp", "src", "dst", "fc_type", "fc_subtype", "rssi", "length"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"Missing packet fields: {sorted(missing)}")
+    out = df.copy()
+    out["timestamp"] = pd.to_numeric(out["timestamp"], errors="coerce")
+    out = out.dropna(subset=["timestamp", "src", "dst"])
+    if out.empty:
+        raise ValueError("No valid timestamp/source/destination rows")
+    out = prepare_packet_flags(out)
+    out["window_id"] = np.floor(out["timestamp"] / window_seconds).astype("int64")
+    groups = out.groupby(["src", "window_id"], sort=True)
     agg = pd.DataFrame({
-        "frame_count":   g.size(),
-        "deauth_count":  g["is_deauth"].sum(),
-        "disassoc_count":g["is_disassoc"].sum(),
-        "mgmt_count":    g["is_mgmt"].sum(),
-        "ctrl_count":    g["is_ctrl"].sum(),
-        "data_count":    g["is_data"].sum(),
-        "rssi_mean":     g["rssi"].mean(),
-        "rssi_std":      g["rssi"].std().fillna(0.0),
-        "unique_dst":    g["dst"].nunique(),
+        "frame_count": groups.size(),
+        "deauth_count": groups["is_deauth"].sum(),
+        "disassoc_count": groups["is_disassoc"].sum(),
+        "mgmt_count": groups["is_mgmt"].sum(),
+        "ctrl_count": groups["is_ctrl"].sum(),
+        "data_count": groups["is_data"].sum(),
+        "rssi_mean": groups["rssi"].mean(),
+        "rssi_std": groups["rssi"].std().fillna(0.0),
+        "unique_dst": groups["dst"].nunique(),
+        "length_mean": groups["length"].mean(),
     })
-
-    # Ratios — WHY? A busy legitimate AP can send hundreds of frames/sec.
-    # Without ratios, "many frames" would look like an attack. Ratios make the
-    # model *shape-aware*, not just volume-aware.
-    agg["deauth_ratio"]   = agg["deauth_count"]   / agg["frame_count"]
-    agg["disassoc_ratio"] = agg["disassoc_count"] / agg["frame_count"]
-    agg["mgmt_ratio"]     = agg["mgmt_count"]     / agg["frame_count"]
-    agg["ctrl_ratio"]     = agg["ctrl_count"]     / agg["frame_count"]
-    agg["data_ratio"]     = agg["data_count"]     / agg["frame_count"]
-
-    if "label" in df.columns and df["label"].max() > 0:
-        label = g["label"].max().rename("label")
+    for name, numerator in (
+        ("deauth_ratio", "deauth_count"), ("disassoc_ratio", "disassoc_count"),
+        ("mgmt_ratio", "mgmt_count"), ("ctrl_ratio", "ctrl_count"),
+        ("data_ratio", "data_count"),
+    ):
+        agg[name] = agg[numerator] / agg["frame_count"]
+    if "label" in out.columns and pd.to_numeric(out["label"], errors="coerce").fillna(0).max() > 0:
+        labels = pd.to_numeric(out["label"], errors="coerce").fillna(0).astype(int)
+        agg["label"] = labels.groupby([out["src"], out["window_id"]]).max()
     else:
-        label = (g["is_deauth"].sum() >= deauth_flood_min).astype(int).rename("label")
+        agg["label"] = (groups["is_deauth"].sum() >= deauth_flood_min).astype(int)
+    return agg[FEATURE_COLUMNS + ["label"]].copy()
 
-    out = agg[FEATURE_COLUMNS].join(label)
-    return out[out["frame_count"] >= 1].copy()
 
-def train_test_split_time_ordered(
-    features: pd.DataFrame, test_fraction: float = 0.30
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Split so that the LAST `test_fraction` of the timeline is the test set.
+def train_test_split_time_ordered(features: pd.DataFrame,
+                                  test_fraction: float = 0.30):
+    """Chronologically split global buckets without dividing labelled attack runs."""
+    if not 0 < test_fraction < 1:
+        raise ValueError("test_fraction must be between 0 and 1")
+    if features.empty or "window_id" not in (features.index.names or []):
+        raise ValueError("Expected non-empty features indexed by (src, window_id)")
+    if "label" not in features.columns:
+        raise ValueError("Expected a label column for attack-episode-aware splitting")
+    windows = np.array(sorted(features.index.get_level_values("window_id").unique()))
+    if len(windows) < 2:
+        raise ValueError("At least two distinct time windows are required for a temporal split")
+    target_cut = int(np.floor(len(windows) * (1 - test_fraction)))
+    target_cut = min(max(target_cut, 1), len(windows) - 1)
 
-    WHY time-ordered instead of random?
-        A random split lets packets from the SAME attack episode land in both
-        halves. The test score then measures memorisation of one burst, not
-        generalisation. Time-ordered splitting is standard for intrusion
-        detection.
-    """
-    window_ids = features.index.get_level_values("window_id").values
-    order = np.argsort(window_ids)
-    cut = int(len(order) * (1 - test_fraction))
-    train_idx = order[:cut]
-    test_idx = order[cut:]
-    return features.iloc[train_idx].copy(), features.iloc[test_idx].copy()
+    # Avoid cutting a contiguous run of attack-labelled windows for the same
+    # source across train/test. Pick the nearest safe chronological boundary.
+    attack_rows = features[features["label"].astype(int) == 1]
+    attack_runs = {}
+    for source, group in attack_rows.groupby(level=0):
+        attack_windows = np.array(sorted(group.index.get_level_values("window_id").unique()))
+        attack_runs[source] = attack_windows
+
+    safe_cuts = []
+    for candidate in range(1, len(windows)):
+        left, right = windows[candidate - 1], windows[candidate]
+        crosses_episode = any(
+            np.any((run[:-1] <= left) & (run[1:] >= right) & ((run[1:] - run[:-1]) == 1))
+            for run in attack_runs.values() if len(run) > 1
+        )
+        if not crosses_episode:
+            safe_cuts.append(candidate)
+    if not safe_cuts:
+        raise ValueError("No chronological split boundary keeps contiguous attack runs intact")
+    cut = min(safe_cuts, key=lambda candidate: (abs(candidate - target_cut), candidate))
+    train_windows, test_windows = set(windows[:cut]), set(windows[cut:])
+    train = features[features.index.get_level_values("window_id").isin(train_windows)].copy()
+    test = features[features.index.get_level_values("window_id").isin(test_windows)].copy()
+    if train.empty or test.empty:
+        raise ValueError("Temporal split produced an empty partition")
+    return train, test
