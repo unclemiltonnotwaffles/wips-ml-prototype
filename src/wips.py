@@ -1,26 +1,14 @@
+"""Offline WIPS prototype detector.
+
+This module scores precomputed feature windows and writes alerts plus a
+persistent *proposed* MAC blocklist. It does not control an access point,
+wireless controller, or other clients' traffic. Enforcement must be supplied
+by a separately reviewed network-management integration.
 """
-wips.py — the Prevention half of the prototype.
-
-WIDS = detect only.  WIPS = detect + *respond*.
-The response implemented here is MAC blocking:
-
-    alert → strike counter → (≥ BLOCK_AFTER_ALERTS) → blocklist → optional iptables
-
-WHY strikes and not "block on first alert"?
-    Every ML model has false positives. Blocking on one alert means a single
-    misclassification takes a legitimate device off the network. Requiring two
-    consecutive attack windows from the same MAC drops the false-positive rate
-    roughly quadratically while barely slowing true-positive response.
-
-WHY dry_run=True by default?
-    Because you will run this on a demo laptop. Accidentally inserting an
-    iptables rule mid-presentation is a bad day. `_apply_block` is where you
-    flip the switch, and the real command is clearly marked.
-"""
-
 from __future__ import annotations
 
 import json
+import re
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -31,6 +19,9 @@ import pandas as pd
 from . import config
 from .features import FEATURE_COLUMNS
 
+_MAC_RE = re.compile(r"^(?:[0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$")
+
+
 class WIPSDetector:
     def __init__(
         self,
@@ -38,48 +29,76 @@ class WIPSDetector:
         blocklist_path: str = config.BLOCKLIST_PATH,
         alerts_path: str = config.ALERTS_PATH,
         block_after_alerts: int = config.BLOCK_AFTER_ALERTS,
-        dry_run: bool = config.DRY_RUN,
+        dry_run: bool = True,
+        model=None,
     ):
-        self.model = joblib.load(model_path)
-        self.block_after_alerts = block_after_alerts
-        self.dry_run = dry_run
-
+        if block_after_alerts < 1:
+            raise ValueError("block_after_alerts must be >= 1")
+        self.model = model if model is not None else joblib.load(model_path)
+        self.block_after_alerts = int(block_after_alerts)
+        # Retained for compatibility with older callers. No host firewall
+        # commands are executed by this offline CSV prototype.
+        self.dry_run = bool(dry_run)
         self.blocklist_path = Path(blocklist_path)
         self.alerts_path = Path(alerts_path)
         self.blocklist_path.parent.mkdir(parents=True, exist_ok=True)
         self.alerts_path.parent.mkdir(parents=True, exist_ok=True)
-
-        if self.blocklist_path.exists():
-            self.blocklist: set[str] = set(json.loads(self.blocklist_path.read_text()))
-        else:
-            self.blocklist = set()
-
+        self.blocklist = self._load_blocklist()
         self._strikes: dict[str, int] = defaultdict(int)
-        self.alerts: list[dict] = []
+
+    def _load_blocklist(self) -> set[str]:
+        if not self.blocklist_path.exists():
+            return set()
+        try:
+            data = json.loads(self.blocklist_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ValueError(f"Cannot read blocklist {self.blocklist_path}: {exc}") from exc
+        if not isinstance(data, list) or any(not isinstance(x, str) for x in data):
+            raise ValueError("Blocklist must be a JSON array of MAC address strings")
+        invalid = [x for x in data if not _MAC_RE.fullmatch(x)]
+        if invalid:
+            raise ValueError(f"Blocklist contains invalid MAC addresses: {invalid[:3]}")
+        return {x.lower() for x in data}
 
     def process_windows(self, feature_df: pd.DataFrame, verbose: bool = True) -> list[dict]:
-        """Feed every row of a window-feature dataframe through the model."""
+        """Score rows and return only alerts created during this invocation."""
         if feature_df.empty:
             return []
-
-        X = feature_df[FEATURE_COLUMNS].values
+        missing = sorted(set(FEATURE_COLUMNS) - set(feature_df.columns))
+        if missing:
+            raise ValueError(f"Missing model feature columns: {missing}")
+        if not feature_df.index.nlevels >= 1:
+            raise ValueError("Expected an index containing source MAC")
+        X = feature_df[FEATURE_COLUMNS]
+        if X.isna().any().any():
+            raise ValueError("Feature data contains NaN values")
         preds = self.model.predict(X)
-        probs = self.model.predict_proba(X)[:, 1]
+        classes = list(getattr(self.model, "classes_", [0, 1]))
+        if 1 not in classes:
+            attack_probs = [0.0] * len(feature_df)
+        elif hasattr(self.model, "predict_proba"):
+            raw = self.model.predict_proba(X)
+            attack_probs = raw[:, classes.index(1)]
+        else:
+            attack_probs = [float(p == 1) for p in preds]
 
-        for (mac, window_id), pred, prob in zip(feature_df.index, preds, probs):
+        created: list[dict] = []
+        for (mac, window_id), pred, prob in zip(feature_df.index, preds, attack_probs):
+            mac = str(mac).lower()
             if mac in self.blocklist:
-                continue                       # already neutralised
-            if pred != 1:
                 continue
+            if pred == 1:
+                alert = self._raise_alert(mac, window_id, float(prob), verbose)
+                created.append(alert)
+                self._strikes[mac] += 1
+                if self._strikes[mac] >= self.block_after_alerts:
+                    self._block(mac, verbose)
+            else:
+                # Consecutive means consecutive evaluated windows for this MAC.
+                self._strikes[mac] = 0
+        return created
 
-            self._raise_alert(mac, window_id, float(prob), verbose=verbose)
-            self._strikes[mac] += 1
-            if self._strikes[mac] >= self.block_after_alerts:
-                self._block(mac, verbose=verbose)
-
-        return self.alerts
-
-    def _raise_alert(self, mac, window_id, prob, verbose):
+    def _raise_alert(self, mac: str, window_id, prob: float, verbose: bool) -> dict:
         alert = {
             "ts": datetime.now(timezone.utc).isoformat(),
             "mac": mac,
@@ -88,54 +107,31 @@ class WIPSDetector:
             "strikes": self._strikes[mac] + 1,
             "action": "alert",
         }
-        self.alerts.append(alert)
         self._append_jsonl(self.alerts_path, alert)
         if verbose:
-            print(f"  ⚠️  ALERT  {mac}  window={window_id}  "
-                  f"p(attack)={prob:.2f}  strike={alert['strikes']}")
+            print(f"ALERT {mac} window={window_id} p(attack)={prob:.3f} "
+                  f"strike={alert['strikes']}")
+        return alert
 
-    def _block(self, mac, verbose):
+    def _block(self, mac: str, verbose: bool) -> None:
         if mac in self.blocklist:
             return
         self.blocklist.add(mac)
-        self.blocklist_path.write_text(json.dumps(sorted(self.blocklist), indent=2))
-
+        tmp = self.blocklist_path.with_suffix(self.blocklist_path.suffix + ".tmp")
+        tmp.write_text(json.dumps(sorted(self.blocklist), indent=2) + "\n", encoding="utf-8")
+        tmp.replace(self.blocklist_path)
         entry = {
             "ts": datetime.now(timezone.utc).isoformat(),
             "mac": mac,
-            "action": "block",
+            "action": "blocklist",
+            "enforcement": "not_configured",
             "dry_run": self.dry_run,
         }
         self._append_jsonl(self.alerts_path, entry)
         if verbose:
-            tag = "DRY-RUN BLOCK" if self.dry_run else "BLOCKED"
-            print(f"  🛡️  {tag}  {mac}  (added to blocklist)")
-
-        self._apply_block(mac)
-
-    def _apply_block(self, mac: str):
-        """
-        The single place where real enforcement happens.
-
-        SAFETY: guarded by `self.dry_run`, which defaults to True in config.py.
-
-        To actually drop frames from a MAC on an authorised lab host:
-
-            subprocess.run(["iptables", "-I", "INPUT",
-                            "-m", "mac", "--mac-source", mac,
-                            "-j", "DROP"], check=True)
-
-        Left commented out because a demo laptop is not a lab.
-        """
-        if self.dry_run:
-            return
-        # --- Uncomment ONLY on an authorised lab host ---
-        # import subprocess
-        # subprocess.run(["iptables", "-I", "INPUT", "-m", "mac",
-        #                 "--mac-source", mac, "-j", "DROP"], check=True)
-        pass
+            print(f"BLOCKLISTED {mac} (no network enforcement performed)")
 
     @staticmethod
     def _append_jsonl(path: Path, obj: dict) -> None:
-        with open(path, "a") as f:
-            f.write(json.dumps(obj) + "\n")
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(obj, sort_keys=True) + "\n")
