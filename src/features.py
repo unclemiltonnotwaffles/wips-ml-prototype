@@ -6,7 +6,7 @@ import pandas as pd
 FEATURE_COLUMNS = [
     "frame_count", "deauth_count", "disassoc_count", "deauth_ratio",
     "disassoc_ratio", "mgmt_ratio", "ctrl_ratio", "data_ratio",
-    "rssi_mean", "rssi_std", "unique_dst",
+    "rssi_mean", "rssi_std", "unique_dst", "length_mean",
 ]
 DEAUTH_SUBTYPE = 12
 DISASSOC_SUBTYPE = 10
@@ -32,7 +32,7 @@ def build_window_features(df: pd.DataFrame, window_seconds: float = 1.0,
         raise ValueError("build_window_features received an empty dataframe")
     if window_seconds <= 0 or deauth_flood_min < 1:
         raise ValueError("window_seconds and deauth_flood_min must be positive")
-    required = {"timestamp", "src", "dst", "fc_type", "fc_subtype", "rssi"}
+    required = {"timestamp", "src", "dst", "fc_type", "fc_subtype", "rssi", "length"}
     missing = required - set(df.columns)
     if missing:
         raise ValueError(f"Missing packet fields: {sorted(missing)}")
@@ -54,6 +54,7 @@ def build_window_features(df: pd.DataFrame, window_seconds: float = 1.0,
         "rssi_mean": groups["rssi"].mean(),
         "rssi_std": groups["rssi"].std().fillna(0.0),
         "unique_dst": groups["dst"].nunique(),
+        "length_mean": groups["length"].mean(),
     })
     for name, numerator in (
         ("deauth_ratio", "deauth_count"), ("disassoc_ratio", "disassoc_count"),
