@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 from src.awid3_loader import _normalise_one
-from src.features import FEATURE_COLUMNS
+from src.features import FEATURE_COLUMNS, train_test_split_time_ordered
 from src.wips import WIPSDetector
 from src import config
 from src.train import train_model
@@ -161,8 +161,7 @@ def test_temporal_split_keeps_contiguous_attack_episode_together():
         [["aa:bb:cc:dd:ee:03"], range(10)], names=["src", "window_id"])
     frame = pd.DataFrame({"label": [0, 0, 0, 0, 0, 1, 1, 1, 0, 0]},
                          index=index)
-    train, test = __import__("src.features", fromlist=["train_test_split_time_ordered"]).train_test_split_time_ordered(
-        frame, test_fraction=0.30)
+    train, test = train_test_split_time_ordered(frame, test_fraction=0.30)
     train_attack = train[train["label"] == 1]
     test_attack = test[test["label"] == 1]
     assert train_attack.empty or test_attack.empty
