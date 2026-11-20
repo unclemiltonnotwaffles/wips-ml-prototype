@@ -43,7 +43,7 @@ The adapter currently uses the selected transmitter/source aliases as the groupi
 
 ## Evaluation discipline
 
-Metrics are generated from the actual run and saved to `results/metrics.json`. The split is chronological by unique global window ID, so all sources in the same second stay on one side of the split. Both classes must occur in both the training and test partitions. Test metrics are meaningful only for the selected dataset, labels, and capture distribution; they do not establish generalisation to unseen networks, devices, attack tools, or environments.
+Metrics are generated from the actual run and saved to `results/metrics.json`. The split is chronological by unique global window ID, so all sources in the same second stay on one side of the split. It also moves the boundary to keep contiguous attack-labelled windows for the same source in one partition. Both classes must occur in both the training and test partitions. Test metrics are meaningful only for the selected dataset, labels, and capture distribution; they do not establish generalisation to unseen networks, devices, attack tools, or environments.
 
 Do not copy historical poster numbers as current results. Run the pipeline on a documented dataset version and retain its configuration, class counts, confusion matrix, and output metrics.
 
