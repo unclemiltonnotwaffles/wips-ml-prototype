@@ -154,3 +154,15 @@ def test_training_rejects_single_class_test_partition(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "CONFUSION_MATRIX_PATH", str(tmp_path / "cm.png"))
     with pytest.raises(ValueError, match="test partition must contain both"):
         train_model(labelled_packets({2}), verbose=False)
+
+
+def test_temporal_split_keeps_contiguous_attack_episode_together():
+    index = pd.MultiIndex.from_product(
+        [["aa:bb:cc:dd:ee:03"], range(10)], names=["src", "window_id"])
+    frame = pd.DataFrame({"label": [0, 0, 0, 0, 0, 1, 1, 1, 0, 0]},
+                         index=index)
+    train, test = __import__("src.features", fromlist=["train_test_split_time_ordered"]).train_test_split_time_ordered(
+        frame, test_fraction=0.30)
+    train_attack = train[train["label"] == 1]
+    test_attack = test[test["label"] == 1]
+    assert train_attack.empty or test_attack.empty
