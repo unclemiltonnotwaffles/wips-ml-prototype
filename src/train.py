@@ -39,7 +39,7 @@ def train_model(df, verbose: bool = True) -> dict:
     tn, fp, fn, tp = cm.ravel()
     attack_scores = clf.predict_proba(X_test)[:, list(clf.classes_).index(1)]
     metrics = {
-        "evaluation": "chronological_holdout_by_global_window",
+        "evaluation": "chronological_holdout_by_global_window_and_attack_run",
         "test_fraction": config.TEST_FRACTION,
         "window_seconds": config.WINDOW_SECONDS,
         "feature_columns": FEATURE_COLUMNS,
