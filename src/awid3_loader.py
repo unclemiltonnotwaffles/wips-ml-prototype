@@ -23,12 +23,21 @@ def _find_col(df: pd.DataFrame, aliases: list[str]) -> str | None:
 
 
 def _timestamp_seconds(series: pd.Series) -> pd.Series:
-    """Accept epoch numbers, numeric strings, or Wireshark human timestamps."""
-    numeric = pd.to_numeric(series, errors="coerce")
-    if numeric.notna().mean() >= 0.8:
-        return numeric
-    parsed = pd.to_datetime(series, errors="coerce", utc=True)
-    return parsed.astype("int64").where(parsed.notna(), float("nan")) / 1e9
+    """Parse numeric epoch values and human-readable timestamps row by row."""
+    strings = series.astype("string").str.strip()
+    numeric_mask = strings.str.match(
+        r"^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+        na=False,
+    )
+    result = pd.Series(float("nan"), index=series.index, dtype="float64")
+    if numeric_mask.any():
+        result.loc[numeric_mask] = pd.to_numeric(strings.loc[numeric_mask], errors="coerce")
+    date_mask = ~numeric_mask & strings.notna()
+    if date_mask.any():
+        parsed = pd.to_datetime(strings.loc[date_mask], errors="coerce", utc=True)
+        epoch = parsed.astype("int64").where(parsed.notna(), float("nan")) / 1e9
+        result.loc[date_mask] = epoch
+    return result
 
 
 def _integer_field(series: pd.Series, field: str) -> pd.Series:
