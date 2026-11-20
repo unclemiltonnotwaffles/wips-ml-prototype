@@ -14,12 +14,18 @@ class SequenceModel:
 
     def __init__(self, predictions):
         self.predictions = np.asarray(predictions)
+        self.position = 0
+        self.last_predictions = np.asarray([], dtype=int)
 
     def predict(self, frame):
-        return self.predictions[:len(frame)]
+        start = self.position
+        stop = start + len(frame)
+        self.last_predictions = self.predictions[start:stop]
+        self.position = stop
+        return self.last_predictions
 
     def predict_proba(self, frame):
-        p = (self.predictions[:len(frame)] == 1).astype(float) * 0.9
+        p = (self.last_predictions == 1).astype(float) * 0.9
         return np.column_stack([1 - p, p])
 
 
