@@ -115,7 +115,7 @@
         <div class="arrow">↓</div>
         <div class="box">Windowing<small>1-second buckets per (src MAC)</small></div>
         <div class="arrow">↓</div>
-        <div class="box">Feature extraction<small>11 numeric features</small></div>
+        <div class="box">Feature extraction<small>12 numeric features</small></div>
         <div class="arrow">↓</div>
         <div class="box">Random Forest<small>100 trees · depth 12 · balanced</small></div>
         <div class="arrow">↓</div>
@@ -179,7 +179,7 @@
       </ul>
       <h3>Would improve</h3>
       <ul>
-        <li>Rolling 5 s features to smooth isolated false positives.</li>
+        <li>Validate calibration, tune thresholds on a separate validation set, and evaluate on unseen capture sessions.</li>
         <li><code>CalibratedClassifierCV</code> for trustworthy probabilities.</li>
         <li>Adversarial validation on disassoc / rogue-AP.</li>
         <li>Authorised AP/controller integration with audit, expiry, and rollback safeguards.</li>
