@@ -7,6 +7,8 @@ import pytest
 from src.awid3_loader import _normalise_one
 from src.features import FEATURE_COLUMNS
 from src.wips import WIPSDetector
+from src import config
+from src.train import train_model
 
 
 class SequenceModel:
@@ -112,3 +114,43 @@ def test_awid3_human_timestamp():
     out = _normalise_one(df, "human-time.csv")
     assert out["timestamp"].notna().all()
     assert out["timestamp"].iloc[0] == pytest.approx(1704067200.0)
+
+
+def labelled_packets(attack_times):
+    rows = []
+    for second in range(20):
+        rows.append({"timestamp": second + 0.1, "src": "aa:bb:cc:dd:ee:02",
+                     "dst": "ff:ff:ff:ff:ff:ff", "fc_type": 2, "fc_subtype": 0,
+                     "rssi": -55, "length": 500, "label": 0})
+        if second in attack_times:
+            for offset in range(3):
+                rows.append({"timestamp": second + 0.2 + offset * 0.01,
+                             "src": "aa:bb:cc:dd:ee:02", "dst": "ff:ff:ff:ff:ff:ff",
+                             "fc_type": 0, "fc_subtype": 12, "rssi": -55,
+                             "length": 26, "label": 1})
+    return pd.DataFrame(rows)
+
+
+def test_training_saves_reproducible_two_class_metrics(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "RESULTS_DIR", str(tmp_path))
+    monkeypatch.setattr(config, "MODEL_PATH", str(tmp_path / "model.joblib"))
+    monkeypatch.setattr(config, "METRICS_PATH", str(tmp_path / "metrics.json"))
+    monkeypatch.setattr(config, "CONFUSION_MATRIX_PATH", str(tmp_path / "cm.png"))
+    metrics = train_model(labelled_packets({2, 16}), verbose=False)
+    saved = json.loads((tmp_path / "metrics.json").read_text())
+    assert metrics["feature_columns"] == FEATURE_COLUMNS
+    assert "length_mean" in FEATURE_COLUMNS
+    assert set(saved["train_class_counts"]) == {"0", "1"}
+    assert set(saved["test_class_counts"]) == {"0", "1"}
+    assert "balanced_accuracy" in saved and "average_precision" in saved
+    assert (tmp_path / "model.joblib").exists()
+    assert (tmp_path / "cm.png").exists()
+
+
+def test_training_rejects_single_class_test_partition(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "RESULTS_DIR", str(tmp_path))
+    monkeypatch.setattr(config, "MODEL_PATH", str(tmp_path / "model.joblib"))
+    monkeypatch.setattr(config, "METRICS_PATH", str(tmp_path / "metrics.json"))
+    monkeypatch.setattr(config, "CONFUSION_MATRIX_PATH", str(tmp_path / "cm.png"))
+    with pytest.raises(ValueError, match="test partition must contain both"):
+        train_model(labelled_packets({2}), verbose=False)
