@@ -1,143 +1,66 @@
-# Wi-Fi Intrusion Prevention System (WIPS) — ML Prototype
+# Wi-Fi Intrusion Detection and Response Prototype
 
-A working prototype that uses a **Random Forest** classifier to detect
-**deauthentication flood attacks** on 802.11 traffic and **automatically blocks**
-the offending MAC address.
+A research prototype that extracts per-source, one-second 802.11 traffic features and uses a Random Forest classifier to identify deauthentication-flood-like activity. It supports generated synthetic records and compatible AWID3 CSV exports.
 
-Runs on **synthetic traffic** out of the box (no dataset needed) and on the
-**AWID3** public dataset via a drop-in loader.
+**Important scope boundary:** this repository processes offline records. It does not capture live radio traffic, manage an access point, disconnect wireless clients, or enforce network-wide MAC blocking. The response stage raises alerts and writes a proposed MAC blocklist only. The term WIPS describes the research goal, not a production-ready prevention capability.
 
----
-
-## Quick start (3 commands)
+## Quick start
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate          # Windows: .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-python tests/test_features.py      # sanity checks
-python -m src.run_demo             # full end-to-end demo
+# Linux/macOS
+source .venv/bin/activate
+# Windows PowerShell
+# .\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pytest
+python -m src.run_demo
 ```
 
-Outputs land in `results/`:
+Generated artifacts are written to `results/`: model, metrics JSON, confusion-matrix PNG, alert JSONL, and proposed blocklist JSON. These outputs are reproducibility artifacts, not proof of field performance.
 
-- `metrics.json` — accuracy / precision / recall / F1 + feature importances
-- `confusion_matrix.png` — picture for the poster
-- `alerts.jsonl` — every alert raised during the demo
-- `blocklist.json` — MACs the WIPS blocked
-- `model.joblib` — saved classifier
+## Processing pipeline
 
----
+1. Read synthetic or AWID3 CSV packet records.
+2. Validate and normalise timestamps, addresses, frame type/subtype, RSSI, and labels.
+3. Aggregate by source address and global one-second time bucket.
+4. Extract the fixed feature vector in `src/features.py`.
+5. Train and evaluate a Random Forest using a chronological holdout split grouped by global time bucket.
+6. Score replay windows, write alerts, and add a source MAC to a persistent *proposed* blocklist after consecutive attack predictions.
 
-## What it does
+A normal prediction resets that source's strike counter. Each invocation of `process_windows` returns only the alerts created by that invocation.
 
-1. **Reads** packet-level Wi-Fi records (synthetic generator or AWID3 CSVs).
-2. **Aggregates** them into 1-second windows per source MAC.
-3. **Extracts 11 simple features** (deauth count, frame-type ratios, RSSI mean/std, unique destinations, etc.).
-4. **Classifies** each window as *normal* or *attack* using a Random Forest.
-5. **Responds**: raises an alert; after 2 consecutive attacks from the same MAC, blocks it.
+## AWID3 input
 
----
-
-## Project layout
-
-```
-wips/
-├── README.md
-├── requirements.txt
-├── poster/
-│   └── poster.html            ← A1 poster (Chrome → Print → Save as PDF)
-├── docs/
-│   ├── CODE_WALKTHROUGH.md    ← "what and why" for every file
-│   └── AI_USAGE.md            ← required AI-assistant statement
-├── src/
-│   ├── config.py              ← every tunable knob
-│   ├── synthetic.py           ← demo traffic generator
-│   ├── awid3_loader.py        ← AWID3 CSV loader
-│   ├── features.py            ← windowing + feature extraction
-│   ├── train.py               ← Random Forest training + evaluation
-│   ├── wips.py                ← detector + alerting + blocking
-│   ├── run_demo.py            ← end-to-end demo (synthetic)
-│   └── run_awid3.py           ← end-to-end demo (AWID3)
-└── tests/
-    └── test_features.py       ← sanity checks (no pytest needed)
-```
-
----
-
-## Run against AWID3
-
-```
+```bash
 python -m src.run_awid3 --data-dir /path/to/awid3/csv_folder
 ```
 
-Get AWID3 from https://icsdweb.aegean.gr/awid/awid3 (free, email sign-up).
-The loader auto-detects common Wireshark-style column names (`wlan.sa`,
-`wlan.fc.type_subtype`, `radiotap.dbm_antsignal`, …) so no renaming is needed.
+The loader supports common Wireshark field names and numeric epoch or human-readable timestamps. It accepts decimal and hexadecimal frame-control fields. Dataset exports vary: verify column semantics, address roles, frame-control encoding, label conventions, and timestamp timezone against the exact AWID3 release before interpreting results. Ambiguous or malformed frame-control values are rejected instead of silently converted to zero.
 
----
+The adapter currently uses the selected transmitter/source aliases as the grouping key. 802.11 address roles vary by frame type and To-DS/From-DS bits; a rigorous study should use frame-aware address extraction rather than assume transmitter and end-host source are interchangeable.
 
-## How the ML works (short)
+## Evaluation discipline
 
-- **Windowing** — packets bucketed into `(src_mac, 1-second)` cells.
-- **Features** — 11 numbers per cell (see `FEATURE_COLUMNS` in `src/features.py`).
-- **Label** — a window is attack if it contains ≥ 3 deauth frames, or if any of
-its packets were labelled attack in the source dataset.
-- **Model** — `RandomForestClassifier(n_estimators=100, max_depth=12, class_weight="balanced")`.
-- **Split** — *time-ordered* 70/30. This is stricter than a random split: it
-prevents packets from the same attack episode leaking into both halves.
+Metrics are generated from the actual run and saved to `results/metrics.json`. The split is chronological by unique global window ID, so all sources in the same second stay on one side of the split. Both classes must occur in the training partition. Test metrics are meaningful only for the selected dataset, labels, and capture distribution; they do not establish generalisation to unseen networks, devices, attack tools, or environments.
 
----
+Do not copy historical poster numbers as current results. Run the pipeline on a documented dataset version and retain its configuration, class counts, confusion matrix, and output metrics.
 
-## The WIPS action
+## Response and safety boundary
 
-When `WIPSDetector` predicts *attack* for a MAC:
+The detector writes alerts and a proposed MAC blocklist. It deliberately does not execute `iptables`, inject deauthentication frames, or call an AP/controller API. A host INPUT firewall rule would not block a wireless client at the access point or protect other clients.
 
-1. Write an alert to `results/alerts.jsonl`.
-2. Increment that MAC's strike counter.
-3. After 2 strikes, add the MAC to `results/blocklist.json` and log `[BLOCK]`.
-4. If `DRY_RUN=False` **and** you are on a Linux lab host, it can run the real
-`iptables -I INPUT -m mac --mac-source <mac> -j DROP` (commented out by default).
-
-`DRY_RUN=True` is the default so you cannot accidentally firewall yourself.
-
----
+Real enforcement requires a separately designed and authorised integration with the actual AP/controller/firewall, including device identity verification, allowlists for infrastructure/management MACs, expiry and rollback, audit logging, rate limits, fail-safe behaviour, and tests on an isolated lab network. Do not treat a spoofable MAC address as a strong identity.
 
 ## Tests
 
+```bash
+python -m pytest
 ```
-python tests/test_features.py
-```
 
-Checks: deauth flagging, window grouping, label correctness, time-split leakage.
-No pytest required.
+Tests cover packet flags, feature windows, temporal partitioning, timestamp/frame-control parsing, strike reset, alert return semantics, and blocklist persistence. They do not validate live wireless capture or external network enforcement.
 
----
+## Ethical use
 
-## Printing the poster
-
-1. Open `poster/poster.html` in Chrome.
-2. Edit `<Your Name>`, `<ID>`, `<Module Code>`, and the results numbers.
-3. `Ctrl+P` → **Destination: Save as PDF** → **Paper size: A1** →
-**Margins: None** → **Background graphics: ON** → Save.
-
----
-
-## Ethical / safety note
-
-All traffic is **synthetic** (generated in-process) or comes from the public
-**AWID3** dataset. No live radio transmission is performed by this code.
-If you adapt it to a real NIC in monitor mode, only do so on an **isolated lab
-network you own or are explicitly authorised to test**.
-
-</BDS:create_file>
-
-<BDS:create_file fileName="requirements.txt">
-
-```text
-pandas>=2.0
-numpy>=1.24
-scikit-learn>=1.3
-matplotlib>=3.7
-joblib>=1.3
-
+Use only data you are authorised to analyse. Do not transmit disruptive wireless frames or block devices on networks you do not own or administer.
