@@ -7,7 +7,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (accuracy_score, precision_score, recall_score,
+from sklearn.metrics import (accuracy_score, balanced_accuracy_score,
+                             average_precision_score, precision_score, recall_score,
                              f1_score, confusion_matrix, classification_report)
 from . import config
 from .features import FEATURE_COLUMNS, build_window_features, train_test_split_time_ordered
@@ -21,8 +22,9 @@ def train_model(df, verbose: bool = True) -> dict:
     if set(y_train.unique()) != {0, 1}:
         raise ValueError("Training partition must contain both normal (0) and attack (1) windows. "
                          "Use a dataset with both classes represented before the split.")
-    if not set(y_test.unique()).issubset({0, 1}):
-        raise ValueError("Labels must be binary (0=normal, 1=attack)")
+    if set(y_test.unique()) != {0, 1}:
+        raise ValueError("Chronological test partition must contain both normal and attack "
+                         "windows; the available capture cannot support a valid two-class evaluation.")
     X_train, X_test = train[FEATURE_COLUMNS], test[FEATURE_COLUMNS]
     if X_train.isna().any().any() or X_test.isna().any().any():
         raise ValueError("Feature matrix contains missing values; refusing to train")
@@ -33,6 +35,9 @@ def train_model(df, verbose: bool = True) -> dict:
     )
     clf.fit(X_train, y_train)
     predictions = clf.predict(X_test)
+    cm = confusion_matrix(y_test, predictions, labels=[0, 1])
+    tn, fp, fn, tp = cm.ravel()
+    attack_scores = clf.predict_proba(X_test)[:, list(clf.classes_).index(1)]
     metrics = {
         "evaluation": "chronological_holdout_by_global_window",
         "test_fraction": config.TEST_FRACTION,
@@ -44,11 +49,14 @@ def train_model(df, verbose: bool = True) -> dict:
         "train_class_counts": {str(k): int(v) for k, v in y_train.value_counts().sort_index().items()},
         "test_class_counts": {str(k): int(v) for k, v in y_test.value_counts().sort_index().items()},
         "accuracy": float(accuracy_score(y_test, predictions)),
+        "balanced_accuracy": float(balanced_accuracy_score(y_test, predictions)),
         "precision": float(precision_score(y_test, predictions, zero_division=0)),
         "recall": float(recall_score(y_test, predictions, zero_division=0)),
+        "specificity": float(tn / (tn + fp)) if (tn + fp) else 0.0,
         "f1": float(f1_score(y_test, predictions, zero_division=0)),
+        "average_precision": float(average_precision_score(y_test, attack_scores)),
         "confusion_matrix_labels": ["normal", "attack"],
-        "confusion_matrix": confusion_matrix(y_test, predictions, labels=[0, 1]).tolist(),
+        "confusion_matrix": cm.tolist(),
         "feature_importances": dict(zip(FEATURE_COLUMNS,
                                         clf.feature_importances_.round(6).tolist())),
         "random_state": config.RANDOM_STATE,
