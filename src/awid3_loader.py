@@ -26,7 +26,7 @@ def _timestamp_seconds(series: pd.Series) -> pd.Series:
     """Parse numeric epoch values and human-readable timestamps row by row."""
     strings = series.astype("string").str.strip()
     numeric_mask = strings.str.match(
-        r"^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+        r"^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$",
         na=False,
     )
     result = pd.Series(float("nan"), index=series.index, dtype="float64")
