@@ -35,7 +35,10 @@ def _timestamp_seconds(series: pd.Series) -> pd.Series:
     date_mask = ~numeric_mask & strings.notna()
     if date_mask.any():
         parsed = pd.to_datetime(strings.loc[date_mask], errors="coerce", utc=True)
-        epoch = parsed.astype("int64").where(parsed.notna(), float("nan")) / 1e9
+        # pandas 3 may store parsed datetimes at microsecond resolution;
+        # explicitly normalise to nanoseconds before converting to Unix seconds.
+        epoch = parsed.astype("datetime64[ns, UTC]").astype("int64")
+        epoch = pd.Series(epoch, index=parsed.index).where(parsed.notna(), float("nan")) / 1e9
         result.loc[date_mask] = epoch
     return result
 
