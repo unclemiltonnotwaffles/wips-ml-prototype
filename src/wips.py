@@ -85,11 +85,11 @@ class WIPSDetector:
 
     def _raise_alert(self, mac, window_id, probability, verbose):
         alert = {"ts": datetime.now(timezone.utc).isoformat(), "mac": mac,
-                 "window_id": int(window_id), "attack_probability": round(probability, 4),
+                 "window_id": int(window_id), "attack_score": round(probability, 4),
                  "strikes": self._strikes[mac] + 1, "action": "alert"}
         self._append_jsonl(self.alerts_path, alert)
         if verbose:
-            print(f"ALERT {mac} window={window_id} p(attack)={probability:.3f} "
+            print(f"ALERT {mac} window={window_id} attack_score={probability:.3f} "
                   f"strike={alert['strikes']}")
         return alert
 
