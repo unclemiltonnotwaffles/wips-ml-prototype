@@ -6,7 +6,7 @@ This document describes the current implementation. It distinguishes offline det
 
 1. `src/awid3_loader.py` normalises common AWID3 CSV columns, epoch or human-readable timestamps, and decimal/hexadecimal frame-control fields. Unparseable type/subtype values fail loudly rather than silently becoming zero. Address roles remain dataset/frame dependent and must be validated against the capture format.
 2. `src/synthetic.py` generates reproducible packet-like records for demonstrations.
-3. `src/features.py` creates per-source, per-global-second windows and extracts the fixed 11-column feature vector. The temporal split uses unique global window IDs, so two MACs observed in the same second cannot be separated across train and test.
+3. `src/features.py` creates per-source, per-global-second windows and extracts the fixed 12-column feature vector, including mean frame length. The temporal split uses unique global window IDs, so two MACs observed in the same second cannot be separated across train and test.
 4. `src/train.py` checks that the training partition contains both classes, fits the Random Forest, evaluates the chronological holdout, and saves the exact class counts, confusion matrix, metrics, and feature importances.
 5. `src/wips.py` scores feature windows, writes JSONL alerts, resets strike counts after a normal or missing time window, and persists a proposed MAC blocklist after the configured consecutive-attack threshold.
 
@@ -14,8 +14,8 @@ This document describes the current implementation. It distinguishes offline det
 
 - `process_windows()` returns only alerts created by the current call, not the complete alert history.
 - Consecutive means adjacent global window IDs for the same source. A normal window or a gap resets the strike count.
-- The detector validates the two-level `(source MAC, window_id)` index and required feature columns.
-- The model's attack-probability column is selected using `model.classes_`; it is not assumed that class 1 is always column index 1.
+- The model score is not probability-calibrated; treat it as a ranking score, not a real-world probability. The detector validates the two-level `(source MAC, window_id)` index and required feature columns.
+- The model's attack-score column is selected using `model.classes_`; it is not assumed that class 1 is always column index 1.
 - A malformed persisted blocklist is rejected.
 
 ## Prevention boundary
