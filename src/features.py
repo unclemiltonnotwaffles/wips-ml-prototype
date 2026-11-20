@@ -80,8 +80,29 @@ def train_test_split_time_ordered(features: pd.DataFrame,
     windows = np.array(sorted(features.index.get_level_values("window_id").unique()))
     if len(windows) < 2:
         raise ValueError("At least two distinct time windows are required for a temporal split")
-    cut = int(np.floor(len(windows) * (1 - test_fraction)))
-    cut = min(max(cut, 1), len(windows) - 1)
+    target_cut = int(np.floor(len(windows) * (1 - test_fraction)))
+    target_cut = min(max(target_cut, 1), len(windows) - 1)
+
+    # Avoid cutting a contiguous run of attack-labelled windows for the same
+    # source across train/test. Pick the nearest safe chronological boundary.
+    attack_rows = features[features["label"].astype(int) == 1]
+    attack_runs = {}
+    for source, group in attack_rows.groupby(level=0):
+        attack_windows = np.array(sorted(group.index.get_level_values("window_id").unique()))
+        attack_runs[source] = attack_windows
+
+    safe_cuts = []
+    for candidate in range(1, len(windows)):
+        left, right = windows[candidate - 1], windows[candidate]
+        crosses_episode = any(
+            np.any((run[:-1] <= left) & (run[1:] >= right) & ((run[1:] - run[:-1]) == 1))
+            for run in attack_runs.values() if len(run) > 1
+        )
+        if not crosses_episode:
+            safe_cuts.append(candidate)
+    if not safe_cuts:
+        raise ValueError("No chronological split boundary keeps contiguous attack runs intact")
+    cut = min(safe_cuts, key=lambda candidate: (abs(candidate - target_cut), candidate))
     train_windows, test_windows = set(windows[:cut]), set(windows[cut:])
     train = features[features.index.get_level_values("window_id").isin(train_windows)].copy()
     test = features[features.index.get_level_values("window_id").isin(test_windows)].copy()
