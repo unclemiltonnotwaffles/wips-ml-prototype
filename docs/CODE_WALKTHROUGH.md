@@ -6,7 +6,7 @@ This document describes the current implementation. It distinguishes offline det
 
 1. `src/awid3_loader.py` normalises common AWID3 CSV columns, epoch or human-readable timestamps, and decimal/hexadecimal frame-control fields. Unparseable type/subtype values fail loudly rather than silently becoming zero. Address roles remain dataset/frame dependent and must be validated against the capture format.
 2. `src/synthetic.py` generates reproducible packet-like records for demonstrations.
-3. `src/features.py` creates per-source, per-global-second windows and extracts the fixed 12-column feature vector, including mean frame length. The temporal split uses unique global window IDs, so two MACs observed in the same second cannot be separated across train and test.
+3. `src/features.py` creates per-source, per-global-second windows and extracts the fixed 12-column feature vector, including mean frame length. The temporal split uses unique global window IDs, so two MACs observed in the same second cannot be separated across train and test. It also selects the nearest boundary that does not divide a contiguous same-source attack-labelled run.
 4. `src/train.py` checks that the training partition contains both classes, fits the Random Forest, evaluates the chronological holdout, and saves the exact class counts, confusion matrix, metrics, and feature importances.
 5. `src/wips.py` scores feature windows, writes JSONL alerts, resets strike counts after a normal or missing time window, and persists a proposed MAC blocklist after the configured consecutive-attack threshold.
 
