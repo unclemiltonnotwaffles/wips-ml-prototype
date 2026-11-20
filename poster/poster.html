@@ -106,7 +106,7 @@
     <div class="card">
       <h2>1. The Problem</h2>
       <p>A <strong>deauthentication flood</strong> is a trivial denial-of-service attack on 802.11: an attacker spoofs management frames to force every client off the network. It needs no password and no special hardware.</p>
-      <p>This project builds a transparent end-to-end prototype: <em>capture → features → ML → alert → block</em>, using a <strong>Random Forest</strong> classifier.</p>
+      <p>This project builds a transparent end-to-end prototype: <em>offline records → features → ML → alert → proposed blocklist</em>, using a <strong>Random Forest</strong> classifier.</p>
     </div>
 
     <div class="card">
@@ -140,42 +140,9 @@
 
     <div class="card">
       <h2>4. Results</h2>
-      <p>Evaluated on two independent data sources. Both achieved perfect detection, proving the pipeline generalises beyond synthetic quirks.</p>
-      
-      <h3>Synthetic Lab Traffic</h3>
-      <div class="stats" style="margin-top:1mm; margin-bottom:2mm;">
-        <div class="stat"><div class="v">100%</div><div class="l">Accuracy</div></div>
-        <div class="stat"><div class="v">100%</div><div class="l">Recall</div></div>
-      </div>
-      <div class="cm" style="margin-top:0;">
-        <div class="hdr"></div>
-        <div class="hdr">pred&nbsp;normal</div>
-        <div class="hdr">pred&nbsp;attack</div>
-        <div class="hdr">actual<br>normal</div>
-        <div class="cell tn">2,870</div>
-        <div class="cell fp">0</div>
-        <div class="hdr">actual<br>attack</div>
-        <div class="cell fn">0</div>
-        <div class="cell tp">32</div>
-      </div>
-
-      <h3 style="margin-top:4mm;">AWID3 Public Dataset</h3>
-      <div class="stats" style="margin-top:1mm; margin-bottom:2mm;">
-        <div class="stat"><div class="v">100%</div><div class="l">Accuracy</div></div>
-        <div class="stat"><div class="v">100%</div><div class="l">Recall</div></div>
-      </div>
-      <div class="cm" style="margin-top:0;">
-        <div class="hdr"></div>
-        <div class="hdr">pred&nbsp;normal</div>
-        <div class="hdr">pred&nbsp;attack</div>
-        <div class="hdr">actual<br>normal</div>
-        <div class="cell tn">326</div>
-        <div class="cell fp">0</div>
-        <div class="hdr">actual<br>attack</div>
-        <div class="cell fn">0</div>
-        <div class="cell tp">89</div>
-      </div>
-      <p style="font-size:3.1mm;color:var(--muted);margin-top:2mm;"><em>AWID3 run used 65,488 frames (20.8% attack) from the 1.Deauth subset.</em></p>
+      <p>Performance figures must be generated from the exact dataset and code revision being presented. This poster intentionally contains no hard-coded accuracy, recall, or confusion-matrix values.</p>
+      <p>Run <code>python -m src.run_demo</code> or the AWID3 pipeline, then use <code>results/metrics.json</code> and <code>results/confusion_matrix.png</code>. Report dataset version, capture selection, class counts, chronological split, and every confusion-matrix cell.</p>
+      <p><strong>Interpretation:</strong> synthetic results validate the software path only. They do not establish performance on real wireless networks or unseen devices.</p>
     </div>
 
     <div class="card">
@@ -216,7 +183,7 @@
         <li>Rolling 5 s features to smooth isolated false positives.</li>
         <li><code>CalibratedClassifierCV</code> for trustworthy probabilities.</li>
         <li>Adversarial validation on disassoc / rogue-AP.</li>
-        <li>Active deauth back to the attacker (injection).</li>
+        <li>Authorised AP/controller integration with audit, expiry, and rollback safeguards.</li>
         <li>Streaming learner for concept drift.</li>
       </ul>
     </div>
@@ -224,7 +191,7 @@
     <div class="card">
       <h2>8. AI Assistant Use</h2>
       <div class="ai-statement">
-        <strong>Declaration.</strong> An AI coding assistant (DeepSeek) was used for: initial project scaffolding, drafting the synthetic traffic simulator, first-pass hyperparameter suggestions, and drafting docstrings. All output was reviewed and tested by the author — notably the time-ordered split and the two-strike blocking policy replaced the assistant's weaker suggestions. The author can explain every line during the live demo.
+        <strong>Declaration.</strong> An AI coding assistant (DeepSeek) was used for: initial project scaffolding, drafting the synthetic traffic simulator, first-pass hyperparameter suggestions, and drafting docstrings. All output was reviewed and tested by the author — notably the time-ordered split and the consecutive-window blocklist policy replaced the assistant's weaker suggestions. The author can explain every line during the live demo.
       </div>
     </div>
 
