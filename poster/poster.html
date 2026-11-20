@@ -90,8 +90,8 @@
 
   <header>
     <div>
-      <h1>Wi-Fi Intrusion <span class="accent">Prevention</span> System</h1>
-      <div class="sub">A machine-learning prototype that detects deauthentication flood attacks and automatically blocks the offending MAC address.</div>
+      <h1>Wi-Fi Intrusion <span class="accent">Detection</span> &amp; Response Prototype</h1>
+      <div class="sub">An offline machine-learning prototype that identifies deauthentication-flood-like traffic and records alerts and proposed MAC blocklist entries.</div>
     </div>
     <div class="meta">
       <strong>Author:</strong> Chiwo Newa<br>
@@ -159,7 +159,7 @@
         <div class="cell tp">32</div>
       </div>
 
-      <h3 style="margin-top:4mm;">AWID3 Real-World Dataset</h3>
+      <h3 style="margin-top:4mm;">AWID3 Public Dataset</h3>
       <div class="stats" style="margin-top:1mm; margin-bottom:2mm;">
         <div class="stat"><div class="v">100%</div><div class="l">Accuracy</div></div>
         <div class="stat"><div class="v">100%</div><div class="l">Recall</div></div>
@@ -180,15 +180,15 @@
 
     <div class="card">
       <h2>5. The "P" in WIPS</h2>
-      <p>When a window is classified <em>attack</em>, the detector raises an alert and increments a <strong>strike counter</strong> for that MAC. After <strong>2 strikes</strong>, the MAC is written to a persistent blocklist.</p>
+      <p>When a window is classified <em>attack</em>, the detector raises an alert and increments a <strong>strike counter</strong> for that MAC. After <strong>2 consecutive predicted attack windows</strong>, the MAC is written to a persistent proposed blocklist.</p>
       <div class="timeline">
         <div class="dim">t=3s   normal traffic</div>
         <div class="warn">t=47s  ⚠ ALERT  aa:bb:..:02  p=0.98</div>
         <div class="warn">t=48s  ⚠ ALERT  aa:bb:..:02  p=0.97</div>
         <div class="block">t=48s  🛡 BLOCK  aa:bb:..:02</div>
       </div>
-      <p><strong>Why two strikes?</strong> One alert could be a false positive; two consecutive attacking windows from the same MAC is a very strong signal.</p>
-      <p><strong>Safety:</strong> <code>DRY_RUN=True</code> by default. On an authorised lab host, <code>_apply_block()</code> runs <code>iptables -I INPUT -m mac --mac-source &lt;mac&gt; -j DROP</code>.</p>
+      <p><strong>Why two strikes?</strong> One alert could be a false positive; two consecutive evaluated attack windows are a policy threshold, not proof of malicious identity.</p>
+      <p><strong>Enforcement boundary:</strong> this offline prototype does not run firewall commands or block clients at an access point. The blocklist is advisory; real enforcement needs a separately tested AP/controller integration.</p>
     </div>
 
     <div class="card">
