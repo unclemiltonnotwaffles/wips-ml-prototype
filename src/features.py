@@ -72,11 +72,13 @@ def build_window_features(df: pd.DataFrame, window_seconds: float = 1.0,
 
 def train_test_split_time_ordered(features: pd.DataFrame,
                                   test_fraction: float = 0.30):
-    """Split by unique global time buckets; never split one second across sets."""
+    """Chronologically split global buckets without dividing labelled attack runs."""
     if not 0 < test_fraction < 1:
         raise ValueError("test_fraction must be between 0 and 1")
     if features.empty or "window_id" not in (features.index.names or []):
         raise ValueError("Expected non-empty features indexed by (src, window_id)")
+    if "label" not in features.columns:
+        raise ValueError("Expected a label column for attack-episode-aware splitting")
     windows = np.array(sorted(features.index.get_level_values("window_id").unique()))
     if len(windows) < 2:
         raise ValueError("At least two distinct time windows are required for a temporal split")
