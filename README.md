@@ -65,11 +65,19 @@ Tests cover packet flags, feature windows, temporal partitioning, timestamp/fram
 
 Use only data you are authorised to analyse. Do not transmit disruptive wireless frames or block devices on networks you do not own or administer.
 
-
 ## Current AWID3 Deauthentication experiment
 
 The latest dataset-specific work is documented in [Deauthentication experiment status](docs/DEAUTH_EXPERIMENT_STATUS.md). This experiment is a separate, packet-level binary baseline: Normal = 0, Deauth = 1, and other AWID3 attack labels are excluded.
 
-The current baseline was evaluated on 5,721,566 records and achieved 0.994913 balanced accuracy, 0.964010 average precision, and 0.999946 ROC AUC at a 0.50 threshold. It produced 3,986 false positives and 77 false negatives. Most false positives (3,774; 94.68%) came from two RogueAP captures and were Normal-labelled management frames with subtype 12 (Deauthentication). This requires source-record and label-semantics investigation; a Deauthentication frame alone is not proof of an attack.
+The Random Forest baseline was evaluated on 5,721,566 untouched test records at a 0.50 threshold. It achieved 99.05% Deauth recall, 66.88% Deauth precision, 79.85% Deauth F1, 99.4913% balanced accuracy, 0.964010 average precision, and 0.999946 ROC AUC. It produced 3,986 false positives and 77 false negatives. Most false positives (3,774; 94.68%) came from two RogueAP captures and were Normal-labelled management frames with subtype 12 (Deauthentication). This requires source-record and label-semantics investigation; a Deauthentication frame alone is not proof of an attack.
 
-The experiment has an important limitation: the held-out test partition contains only two independent Deauth capture files. Results therefore do not establish robust generalisation to unseen environments. The next work is to inspect the original RogueAP records, establish capture-grouped validation for threshold selection, and develop temporal/event-level detection. Do not interpret these offline metrics as evidence of live wireless prevention.
+A separate capture-grouped validation threshold sweep was completed, but it contained only two Deauth capture groups. No threshold was automatically promoted, and the final test threshold was not tuned using test metrics.
+
+The experiment has an important limitation: the held-out test partition contains only two independent Deauth capture files. Results therefore do not establish robust generalisation to unseen environments. The next work is to verify the original RogueAP label semantics and packet context, increase independent Deauth capture coverage, and develop temporal/event-level detection. Do not interpret these offline metrics as evidence of live wireless prevention.
+
+## Research poster
+
+The current A1 portrait HTML poster presents the binary AWID3 Deauthentication experiment, the final untouched test metrics, the separate validation threshold review, the RogueAP false-positive finding, and the study limitations.
+
+- [View the HTML research poster](poster/poster.html)
+- [View the detailed experiment report](docs/DEAUTH_EXPERIMENT_STATUS.md)
