@@ -1,46 +1,65 @@
 # Statement of AI-Assistant Use
 
-**Required by the coursework brief.** Copy the relevant box onto your poster.
+**Required by the coursework brief.** This statement records the AI tools used during development and the author's role in reviewing, running, testing, and interpreting the work. Copy the relevant summary onto the research poster if required by the coursework brief.
 
----
+## AI tools used
+
+Two AI coding assistants were used at different stages:
+
+- **DeepSeek / BetterDeepSeek** — used during the initial prototype development, as described below.
+- **ChatGPT (OpenAI)** — used during the later AWID3 Deauthentication-focused dataset preparation, model evaluation, error investigation, documentation, and poster update.
 
 ## What AI was used for
 
-An AI coding assistant (DeepSeek / BetterDeepSeek) was used to:
+### Initial prototype development (DeepSeek / BetterDeepSeek)
 
-1. **Scaffold the project structure** — file layout, `requirements.txt`, module
-   boundaries (`loader → features → train → wips`). Reviewed and adjusted by
-   the author.
-2. **Generate the synthetic traffic simulator** (`src/synthetic.py`) — the
-   frame-type distribution weights and the "1 % legitimate deauth" trick were
-   produced by the assistant after the author specified the behaviour.
-3. **Draft initial hyperparameters** — the author then tested `max_depth` of 8,
-   12, and unlimited, and kept 12 because unlimited depth overfit to individual
-   MAC addresses.
-4. **Write first-pass docstrings and comments** — reviewed by the author;
-   several rewritten for accuracy.
+1. **Project scaffolding** — suggestions for the file layout, `requirements.txt`, and module boundaries (`loader → features → train → wips`). The author reviewed and adjusted the structure.
+2. **Synthetic traffic simulator** (`src/synthetic.py`) — assistance generating the simulator, including frame-type distribution weights and the simulated legitimate Deauthentication traffic behaviour.
+3. **Initial hyperparameter suggestions** — suggestions for Random Forest settings. The author tested alternatives and selected the configuration used in the prototype.
+4. **First-pass docstrings and comments** — drafted with AI assistance and reviewed for accuracy.
 
-## What the author did by hand
+### AWID3 Deauthentication experiment (ChatGPT)
 
-- Chose the 11 features in `FEATURE_COLUMNS` (assistant suggested ~20; author
-  cut down to the ones that could be justified in one sentence each).
-- Chose the **time-ordered train/test split** — assistant's first draft used
-  `train_test_split(random_state=42)`, rejected as leaking attack episodes.
-- Designed the **strike-count blocking policy** (assistant first drafted
-  block-on-first-alert; author changed to `BLOCK_AFTER_ALERTS = 2`).
-- Wrote the test assertions and ran them.
-- Ran the demo, inspected the confusion matrix, adjusted `WINDOW_SECONDS` from
-  5 s to 1 s after observing detection latency.
+ChatGPT was used as a technical aid to:
 
-## What the author can explain line-by-line
+1. **Plan and explain dataset preparation** — cleaning AWID3 CSV exports, normalising hexadecimal frame-control values, auditing labels and features, and preparing capture-grouped partitions.
+2. **Develop and review analysis scripts** — assistance with scripts for feature-quality audits, capture identity checks, binary Normal-versus-Deauth dataset preparation, model training, false-positive extraction, and false-positive pattern analysis.
+3. **Debug implementation issues** — including NumPy bitwise operations, dataset processing, and evaluation-code corrections.
+4. **Interpret model evaluation** — explain confusion-matrix values, precision, recall, F1, balanced accuracy, average precision, ROC AUC, class imbalance, and false-positive rates.
+5. **Design validation checks** — assist with a separate capture-grouped validation threshold sweep and a final evaluation script that evaluates the existing model on the untouched test partition and attempts to match false-positive feature signatures to original capture records.
+6. **Prepare technical documentation** — assist with the AWID3 experiment status report, README updates, and the HTML research poster using the results produced by the author's local runs.
 
-- Every column of `FEATURE_COLUMNS` and why it was chosen.
-- Why windowing is necessary for a rate-based attack.
-- Random Forest vs a hand-written threshold, and when each is appropriate.
-- Why the time-ordered split is stricter than a random split.
-- The code path from packet to blocked MAC in `wips.py`.
-- The safety rationale behind `DRY_RUN = True`.
+AI assistance did not execute the experiments on the author's computer or independently verify the raw dataset. The author ran the scripts locally, supplied the resulting terminal output for interpretation, and remains responsible for verifying the source data, code, reported results, and final submission.
+
+## What the author did and verified
+
+- Obtained and ran the AWID3 dataset locally and executed the cleaning, audit, split, preparation, training, investigation, and final validation scripts.
+- Reviewed dataset labels, feature completeness, capture distributions, and capture overlap.
+- Used source capture files as grouping units to keep capture files separate between the original training and test partitions.
+- Confirmed the binary experiment scope: Normal = 0, Deauth = 1; other AWID3 attack labels were excluded.
+- Ran the Random Forest training and evaluated the complete untouched test partition in chunks.
+- Ran the false-positive investigations and the final validation script, then supplied the actual command output used to update the experiment report and poster.
+- Reviewed the generated documentation and the limitations stated in it.
+
+## Important interpretation and limitations
+
+- The current AWID3 experiment is a **packet-level binary Deauthentication WIDS baseline**. It is separate from the repository's earlier window-based prototype.
+- The held-out test partition contains only **two independent Deauth capture files**. This limits the strength of claims about generalisation to unseen Deauthentication attack environments.
+- The final test metrics were measured at the baseline threshold of **0.50**. The threshold sweep was conducted on a separate validation partition; the final test results were not used to choose a threshold.
+- The false-positive investigation found that 3,774 of 3,986 false positives came from two Normal-labelled RogueAP captures and shared Deauthentication management-frame characteristics. A Deauthentication frame alone does not establish malicious intent; source-label semantics and packet context still require investigation.
+- The experiment uses offline CSV records. It does not demonstrate live monitor-mode capture, packet injection, client disconnection, or actual access-point enforcement.
+
+## What the author should be able to explain
+
+- The dataset cleaning, label mapping, feature selection, and capture-grouped split.
+- Why `source_file` is used for grouping and auditing rather than as a model feature.
+- The Random Forest configuration and the meaning of each reported evaluation metric.
+- Why class imbalance makes precision and absolute false-positive counts important.
+- Why the threshold sweep is separate from the untouched final test evaluation.
+- Why the RogueAP false positives require label and packet-context investigation rather than automatic relabelling.
+- The difference between the packet-level AWID3 experiment and the repository's window-based prototype.
+- The distinction between an offline detection result, an alert, a proposed blocklist, and actual wireless prevention.
 
 ---
 
-*Signed: ____________________________  Date: ____________*
+*Author: ____________________________  Date: ____________*
