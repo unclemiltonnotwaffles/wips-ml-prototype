@@ -1,216 +1,230 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<title>WIPS Poster — A1</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A1 research poster presenting a binary AWID3 Deauthentication-focused wireless intrusion detection experiment.">
+<title>Deauthentication-focused WIDS — AWID3 Experiment Poster</title>
 <style>
-  @page { size: 594mm 841mm; margin: 0; }
-  :root {
-    --ink: #0d0d0d; --muted: #4b5563; --accent: #4d6bfe;
-    --accent-soft: #eef2ff; --border: #d1d5db; --bg-soft: #f8fafc;
-  }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: #e5e7eb; }
-  body { font-family: "Inter", "Segoe UI", system-ui, sans-serif; color: var(--ink); }
-  .page {
-    width: 594mm; height: 841mm; background: white; margin: 0 auto;
-    padding: 12mm; display: flex; flex-direction: column; gap: 6mm;
-    overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,.1);
-  }
-  header {
-    border-bottom: 2mm solid var(--accent); padding-bottom: 4mm;
-    display: flex; justify-content: space-between; align-items: flex-end;
-  }
-  header h1 { font-size: 22mm; line-height: 1.02; margin: 0; font-weight: 800; letter-spacing: -0.02em; }
-  header h1 .accent { color: var(--accent); }
-  header .sub { font-size: 5.5mm; color: var(--muted); margin-top: 3mm; max-width: 380mm; }
-  header .meta { text-align: right; font-size: 4mm; color: var(--muted); line-height: 1.5; }
-  header .meta strong { color: var(--ink); }
-  .body {
-    flex: 1; column-count: 3; column-gap: 8mm; column-fill: balance;
-    font-size: 3.6mm; line-height: 1.42;
-  }
-  .card {
-    break-inside: avoid; background: var(--bg-soft);
-    border: 0.4mm solid var(--border); border-radius: 3mm;
-    padding: 5mm; margin-bottom: 6mm; display: block;
-  }
-  .card h2 {
-    font-size: 5.4mm; margin: 0 0 3mm 0; color: var(--accent); font-weight: 700;
-    border-bottom: 0.3mm solid var(--border); padding-bottom: 2mm;
-  }
-  .card h3 { font-size: 4.2mm; margin: 4mm 0 1.5mm 0; font-weight: 700; }
-  .card p { margin: 0 0 2.5mm 0; }
-  .card p:last-child { margin-bottom: 0; }
-  ul { margin: 0 0 2.5mm 0; padding-left: 5mm; }
-  li { margin-bottom: 1.4mm; }
-  code {
-    font-family: "JetBrains Mono", ui-monospace, monospace;
-    background: #eef0f4; padding: 0.2mm 1.2mm; border-radius: 1mm;
-    font-size: 3.2mm; color: #111827;
-  }
-  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5mm; margin: 3mm 0; }
-  .stat { background: var(--accent-soft); border-radius: 2mm; padding: 3mm; text-align: center; }
-  .stat .v { font-size: 8mm; font-weight: 800; color: var(--accent); line-height: 1; }
-  .stat .l { font-size: 3mm; color: var(--muted); margin-top: 1mm; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
-  .cm {
-    display: grid; grid-template-columns: 18mm 1fr 1fr;
-    grid-template-rows: 8mm 1fr 1fr; gap: 1mm; font-size: 3mm;
-    text-align: center; margin: 3mm 0;
-  }
-  .cm .hdr { display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--muted); }
-  .cm .cell { display: flex; align-items: center; justify-content: center; border-radius: 1.5mm; font-weight: 700; padding: 3mm 0; font-size: 4.5mm; }
-  .cm .tp { background: #bfdbfe; color: #1e3a8a; }
-  .cm .tn { background: #dbeafe; color: #1e3a8a; }
-  .cm .fp { background: #fee2e2; color: #7f1d1d; }
-  .cm .fn { background: #fde68a; color: #78350f; }
-  .arch { display: flex; flex-direction: column; gap: 2mm; margin: 3mm 0; font-size: 3.2mm; }
-  .arch .box { background: white; border: 0.4mm solid var(--border); border-radius: 2mm; padding: 2.5mm; text-align: center; font-weight: 600; }
-  .arch .box small { display: block; font-weight: 400; color: var(--muted); font-size: 2.7mm; margin-top: 0.8mm; }
-  .arch .arrow { text-align: center; color: var(--accent); font-weight: 800; font-size: 4mm; line-height: 1; }
-  table { width: 100%; border-collapse: collapse; font-size: 3.1mm; margin: 2mm 0; }
-  th, td { text-align: left; padding: 1.6mm 1.5mm; border-bottom: 0.25mm solid var(--border); vertical-align: top; }
-  th { background: var(--accent-soft); color: #1e3a8a; font-weight: 700; font-size: 3mm; }
-  .timeline {
-    background: #0f172a; color: #e2e8f0; border-radius: 2mm; padding: 3mm;
-    font-family: "JetBrains Mono", ui-monospace, monospace;
-    font-size: 3mm; line-height: 1.55; margin: 2.5mm 0;
-  }
-  .timeline .warn { color: #fbbf24; }
-  .timeline .block { color: #f87171; font-weight: 700; }
-  .timeline .dim { color: #64748b; }
-  .ai-statement { background: #fef3c7; border-left: 2mm solid #f59e0b; padding: 3.5mm 4mm; border-radius: 0 2mm 2mm 0; font-size: 3.1mm; line-height: 1.45; }
-  .ai-statement strong { color: #92400e; }
-  footer { margin-top: auto; border-top: 0.4mm solid var(--border); padding-top: 3mm; font-size: 3mm; color: var(--muted); display: flex; justify-content: space-between; }
-  @media print { body { background: white; } .page { box-shadow: none; margin: 0; } }
+:root{--navy:#10243a;--blue:#1769aa;--cyan:#13a6b5;--ink:#172536;--muted:#5b6b7b;--paper:#fff;--wash:#f2f6fa;--line:#d8e1e9;--red:#b54747;--amber:#a66b12;--green:#18785c}
+*{box-sizing:border-box}
+@page{size:A1 portrait;margin:0}
+html,body{margin:0;padding:0;background:#dce4eb;color:var(--ink);font-family:Inter,"Segoe UI",Arial,sans-serif}
+.poster{width:594mm;min-height:841mm;margin:0 auto;background:var(--paper);padding:13mm;display:flex;flex-direction:column;gap:6mm;box-shadow:0 5mm 18mm #10243a22}
+header{background:linear-gradient(120deg,var(--navy),#174d76);color:white;padding:10mm 11mm;border-radius:4mm;display:grid;grid-template-columns:1fr auto;gap:8mm;align-items:end}
+.eyebrow{font-size:4mm;text-transform:uppercase;letter-spacing:.16em;color:#a9d8e8;font-weight:700;margin-bottom:3mm}
+h1{font-size:19mm;line-height:1.02;letter-spacing:-.035em;margin:0;max-width:430mm}
+.subtitle{font-size:5.2mm;line-height:1.35;color:#e0edf5;margin-top:4mm;max-width:420mm}
+.meta{text-align:right;font-size:3.8mm;line-height:1.65;color:#d6e5ef;white-space:nowrap}
+.meta strong{color:#fff}
+.pill{display:inline-block;margin-top:3mm;border:1px solid #8dcbd8;border-radius:20mm;padding:1.5mm 3mm;color:#d7f6f4;font-size:3.1mm;font-weight:700;letter-spacing:.06em}
+main{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5mm;align-items:start}
+.col{display:flex;flex-direction:column;gap:5mm;min-width:0}
+.card{background:var(--wash);border:1px solid var(--line);border-radius:3mm;padding:5.5mm;break-inside:avoid}
+.card h2{font-size:5.4mm;color:var(--blue);margin:0 0 3.2mm;padding-bottom:2mm;border-bottom:1px solid var(--line);letter-spacing:-.01em}
+.card h3{font-size:4.1mm;margin:3mm 0 1.5mm;color:var(--navy)}
+p{font-size:3.55mm;line-height:1.43;margin:0 0 2.5mm}
+p:last-child{margin-bottom:0}
+ul,ol{margin:1mm 0 0;padding-left:5mm;font-size:3.35mm;line-height:1.42}
+li{margin:0 0 1.5mm}
+.small{font-size:3mm;color:var(--muted);line-height:1.4}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm;margin:2mm 0 3mm}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:2.2mm;padding:3mm;text-align:center}
+.kpi .num{font-size:8mm;line-height:1;font-weight:800;color:var(--blue);letter-spacing:-.04em}
+.kpi .label{font-size:2.8mm;line-height:1.25;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:700;margin-top:1.5mm}
+.kpi.alert .num{color:var(--red)}
+.kpi.good .num{color:var(--green)}
+.pipeline{display:grid;grid-template-columns:1fr;gap:1.5mm;margin-top:2mm}
+.step{background:#fff;border:1px solid var(--line);border-radius:2mm;padding:2.5mm 3mm;text-align:center;font-size:3.4mm;font-weight:700;color:var(--navy)}
+.step span{display:block;font-size:2.8mm;font-weight:400;color:var(--muted);margin-top:.7mm}
+.down{text-align:center;color:var(--cyan);font-weight:900;font-size:4mm;line-height:.8}
+.metrics{width:100%;border-collapse:collapse;font-size:3.2mm;margin-top:2mm}
+.metrics th,.metrics td{padding:1.8mm 1.5mm;border-bottom:1px solid var(--line);text-align:left}
+.metrics th{color:var(--navy);background:#e5eef6;font-size:3mm}
+.metrics td:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.cm{display:grid;grid-template-columns:22mm 1fr 1fr;gap:1.2mm;margin:3mm 0 1.5mm;text-align:center;font-size:2.9mm}
+.cm div{padding:2.5mm 1mm;border-radius:1.5mm}
+.cm .axis{background:transparent;color:var(--muted);font-weight:700;display:flex;align-items:center;justify-content:center}
+.cm .tn{background:#d9eee7;color:#145c46}.cm .fp{background:#f7dddd;color:#8e3030}.cm .fn{background:#f8e9c9;color:#82570c}.cm .tp{background:#dbeafa;color:#174d82}
+.barrow{display:grid;grid-template-columns:24mm 1fr 17mm;gap:2mm;align-items:center;margin:2mm 0;font-size:3mm}
+.track{height:4mm;background:#e0e7ee;border-radius:10mm;overflow:hidden}
+.fill{height:100%;background:var(--blue);border-radius:10mm}
+.barrow b{text-align:right;font-variant-numeric:tabular-nums}
+.callout{border-left:2mm solid var(--amber);background:#fff6e6;padding:3mm 3.5mm;border-radius:0 2mm 2mm 0;font-size:3.2mm;line-height:1.42;margin-top:2.5mm}
+.callout strong{color:#7b4b06}
+.danger{border-left-color:var(--red);background:#fff0f0}
+.goodbox{border-left:2mm solid var(--green);background:#eaf6f1;padding:3mm 3.5mm;border-radius:0 2mm 2mm 0;font-size:3.2mm;line-height:1.42;margin-top:2.5mm}
+.tag{display:inline-block;background:#e4edf5;color:#244c6b;padding:.8mm 1.8mm;border-radius:1mm;font-size:2.8mm;font-weight:700;margin:0 1mm 1mm 0}
+footer{margin-top:auto;border-top:1px solid var(--line);padding-top:3mm;display:flex;justify-content:space-between;gap:8mm;color:var(--muted);font-size:3mm;line-height:1.4}
+footer a{color:var(--blue);text-decoration:none}
+@media screen and (max-width:900px){.poster{width:100%;min-height:0;padding:18px;gap:14px}header{grid-template-columns:1fr}.meta{text-align:left}h1{font-size:clamp(34px,8vw,72px)}.subtitle{font-size:17px}main{grid-template-columns:1fr}.card{padding:18px}.card h2{font-size:22px}p{font-size:15px}ul,ol{font-size:14px}.kpi .num{font-size:34px}.kpi .label{font-size:11px}.metrics{font-size:13px}.cm{font-size:12px}.barrow{font-size:12px}.small{font-size:12px}footer{font-size:12px}}
+@media print{html,body{background:#fff}.poster{margin:0;box-shadow:none;width:594mm;min-height:841mm;height:841mm}a{color:inherit}}
 </style>
 </head>
 <body>
-<div class="page">
+<div class="poster">
+<header>
+ <div>
+  <div class="eyebrow">Wireless Security · AWID3 Dataset · Research Experiment</div>
+  <h1>Deauthentication-focused <span style="color:#7dd5df">Wireless Intrusion Detection</span></h1>
+  <div class="subtitle">A binary Random Forest baseline for distinguishing Normal 802.11 records from Deauthentication-labelled records, with capture-level evaluation and false-positive investigation.</div>
+  <div class="pill">OFFLINE PACKET-LEVEL WIDS EXPERIMENT</div>
+ </div>
+ <div class="meta"><strong>Author:</strong> Chiwo Newa<br><strong>Project:</strong> Wireless Security<br><strong>Updated:</strong> 23 November 2026<br><strong>Code:</strong> unclemiltonnotwaffles/wips-ml-prototype</div>
+</header>
 
-  <header>
-    <div>
-      <h1>Wi-Fi Intrusion <span class="accent">Detection</span> &amp; Response Prototype</h1>
-      <div class="sub">An offline machine-learning prototype that identifies deauthentication-flood-like traffic and records alerts and proposed MAC blocklist entries.</div>
-    </div>
-    <div class="meta">
-      <strong>Author:</strong> Chiwo Newa<br>
-      <strong>Module:</strong> CNS 320;<br>
-      <strong>Date:</strong> 26 Oct 2026
-    </div>
-  </header>
-
-  <div class="body">
-
-    <div class="card">
-      <h2>1. The Problem</h2>
-      <p>A <strong>deauthentication flood</strong> is a trivial denial-of-service attack on 802.11: an attacker spoofs management frames to force every client off the network. It needs no password and no special hardware.</p>
-      <p>This project builds a transparent end-to-end prototype: <em>offline records → features → ML → alert → proposed blocklist</em>, using a <strong>Random Forest</strong> classifier.</p>
-    </div>
-
-    <div class="card">
-      <h2>2. System Architecture</h2>
-      <div class="arch">
-        <div class="box">Packet source<small>synthetic · AWID3 CSV · monitor NIC</small></div>
-        <div class="arrow">↓</div>
-        <div class="box">Windowing<small>1-second buckets per (src MAC)</small></div>
-        <div class="arrow">↓</div>
-        <div class="box">Feature extraction<small>12 numeric features</small></div>
-        <div class="arrow">↓</div>
-        <div class="box">Random Forest<small>100 trees · depth 12 · balanced</small></div>
-        <div class="arrow">↓</div>
-        <div class="box" style="background:#eef2ff;border-color:#4d6bfe;">Blocklist<small>MAC added after 2 strikes</small></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>3. Features (why these 11?)</h2>
-      <p>Each window becomes one row. Ratios (not just counts) make the model <em>shape-aware</em> — a busy legitimate AP sends hundreds of frames/s too.</p>
-      <table>
-        <tr><th>Feature</th><th>Catches</th></tr>
-        <tr><td><code>deauth_count</code></td><td>the flood</td></tr>
-        <tr><td><code>deauth_ratio</code></td><td>burst <em>shape</em></td></tr>
-        <tr><td><code>frame_count</code></td><td>total rate</td></tr>
-        <tr><td><code>mgmt_ratio</code></td><td>data-starved flood</td></tr>
-        <tr><td><code>rssi_std</code></td><td>uniform-power burst</td></tr>
-        <tr><td><code>unique_dst</code></td><td>broadcast targeting</td></tr>
-      </table>
-    </div>
-
-    <div class="card">
-      <h2>4. Results</h2>
-      <p>Performance figures must be generated from the exact dataset and code revision being presented. This poster intentionally contains no hard-coded accuracy, recall, or confusion-matrix values.</p>
-      <p>Run <code>python -m src.run_demo</code> or the AWID3 pipeline, then use <code>results/metrics.json</code> and <code>results/confusion_matrix.png</code>. Report dataset version, capture selection, class counts, chronological split, and every confusion-matrix cell.</p>
-      <p><strong>Interpretation:</strong> synthetic results validate the software path only. They do not establish performance on real wireless networks or unseen devices.</p>
-    </div>
-
-    <div class="card">
-      <h2>5. The "P" in WIPS</h2>
-      <p>When a window is classified <em>attack</em>, the detector raises an alert and increments a <strong>strike counter</strong> for that MAC. After <strong>2 consecutive predicted attack windows</strong>, the MAC is written to a persistent proposed blocklist.</p>
-      <div class="timeline">
-        <div class="dim">t=3s   normal traffic</div>
-        <div class="warn">t=47s  ⚠ ALERT  aa:bb:..:02  p=0.98</div>
-        <div class="warn">t=48s  ⚠ ALERT  aa:bb:..:02  p=0.97</div>
-        <div class="block">t=48s  🛡 BLOCK  aa:bb:..:02</div>
-      </div>
-      <p><strong>Why two strikes?</strong> One alert could be a false positive; two consecutive evaluated attack windows are a policy threshold, not proof of malicious identity.</p>
-      <p><strong>Enforcement boundary:</strong> this offline prototype does not run firewall commands or block clients at an access point. The blocklist is advisory; real enforcement needs a separately tested AP/controller integration.</p>
-    </div>
-
-    <div class="card">
-      <h2>6. Reproducibility</h2>
-      <ul>
-        <li>Random Forest, 100 trees, max depth 12, <code>class_weight="balanced"</code>.</li>
-        <li>Time-ordered 70/30 split — no attack episode appears in both halves.</li>
-        <li>Fixed seeds (<code>RANDOM_STATE=42</code>).</li>
-        <li>Tests: <code>python tests/test_features.py</code>.</li>
-        <li>Dataset-agnostic: same pipeline runs on AWID3 or synthetic traffic.</li>
-        <li><strong>Dataset:</strong> <a href="https://www.kaggle.com/datasets/thrilochananakkella/cyber-security" style="color:var(--accent);">AWID3-CSV (Kaggle)</a> / Official AWID3.</li>
-      </ul>
-    </div>
-
-    <div class="card">
-      <h2>7. Limitations &amp; Future Work</h2>
-      <h3>Limitations</h3>
-      <ul>
-        <li>Strong signal in <code>deauth_count</code>; other attacks need re-training.</li>
-        <li>Each window is scored independently.</li>
-        <li>Offline — reads CSVs; live capture needs a monitor-mode NIC.</li>
-      </ul>
-      <h3>Would improve</h3>
-      <ul>
-        <li>Validate calibration, tune thresholds on a separate validation set, and evaluate on unseen capture sessions.</li>
-        <li><code>CalibratedClassifierCV</code> for trustworthy probabilities.</li>
-        <li>Adversarial validation on disassoc / rogue-AP.</li>
-        <li>Authorised AP/controller integration with audit, expiry, and rollback safeguards.</li>
-        <li>Streaming learner for concept drift.</li>
-      </ul>
-    </div>
-
-    <div class="card">
-      <h2>8. AI Assistant Use</h2>
-      <div class="ai-statement">
-        <strong>Declaration.</strong> An AI coding assistant (DeepSeek) was used for: initial project scaffolding, drafting the synthetic traffic simulator, first-pass hyperparameter suggestions, and drafting docstrings. All output was reviewed and tested by the author — notably the time-ordered split and the consecutive-window blocklist policy replaced the assistant's weaker suggestions. The author can explain every line during the live demo.
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>9. Live Demo</h2>
-      <ol style="margin:0;padding-left:5mm;">
-        <li><code>python -m src.run_demo</code> — trains on 10 min synthetic, replays a fresh attack.</li>
-        <li>Watch the alert timeline and blocklist grow.</li>
-        <li><code>python -m src.run_awid3 --data-dir …</code> — same pipeline, real dataset.</li>
-      </ol>
-      <p style="margin-top:2.5mm;font-size:3.1mm;color:var(--muted);">All traffic is synthetic or public AWID3. No live radio transmission by this code.</p>
-    </div>
-
+<main>
+<div class="col">
+ <section class="card">
+  <h2>1 · Problem & objective</h2>
+  <p>IEEE 802.11 Deauthentication management frames can be used in denial-of-service activity by forcing wireless clients to disconnect. Detecting the frame type alone is not enough: legitimate network activity can also contain Deauthentication frames.</p>
+  <p><strong>Objective:</strong> train and evaluate a binary classifier for the AWID3 labels in scope:</p>
+  <div class="kpis">
+   <div class="kpi"><div class="num">0</div><div class="label">Normal</div></div>
+   <div class="kpi"><div class="num">1</div><div class="label">Deauth</div></div>
   </div>
+  <p class="small">All other AWID3 attack labels were excluded from this binary experiment. The model classifies individual packet records; it does not yet make event-level attack decisions.</p>
+ </section>
 
-  <footer>
-    <div>Wi-Fi Intrusion Prevention System · Random Forest · AWID3 / synthetic</div>
-    <div>Code &amp; docs: <code>github.com/unclemiltonnotwaffles/wips-ml-prototype</code></div>
-  </footer>
+ <section class="card">
+  <h2>2 · Experimental pipeline</h2>
+  <div class="pipeline">
+   <div class="step">AWID3 CSV capture files<span>745 source captures · cleaned records</span></div>
+   <div class="down">↓</div>
+   <div class="step">Capture-grouped partition<span>596 training captures · 149 test captures · zero overlap</span></div>
+   <div class="down">↓</div>
+   <div class="step">11 numeric packet features<span>Frame control · length · timing · channel · signal</span></div>
+   <div class="down">↓</div>
+   <div class="step">Random Forest classifier<span>200 trees · max depth 20 · balanced_subsample</span></div>
+   <div class="down">↓</div>
+   <div class="step">Packet-level prediction & error analysis<span>Threshold 0.50 baseline · full held-out test</span></div>
+  </div>
+  <p class="small" style="margin-top:3mm">The source capture filename is used for grouping and audit only; it is not a model input.</p>
+ </section>
 
+ <section class="card">
+  <h2>3 · Dataset & feature design</h2>
+  <div class="kpis">
+   <div class="kpi"><div class="num">36.96M</div><div class="label">Cleaned AWID3 records</div></div>
+   <div class="kpi"><div class="num">745</div><div class="label">Capture files</div></div>
+   <div class="kpi"><div class="num">180,817</div><div class="label">Binary training records</div></div>
+   <div class="kpi"><div class="num">5.72M</div><div class="label">Untouched test records</div></div>
+  </div>
+  <p><strong>Training:</strong> 150,000 Normal + 30,817 Deauth. <strong>Test:</strong> 5,713,441 Normal + 8,125 Deauth; natural class imbalance retained.</p>
+  <h3>11 model inputs</h3>
+  <p><span class="tag">frame.len</span><span class="tag">frame.time_delta</span><span class="tag">radiotap.channel.freq</span><span class="tag">wlan.fc.protected</span><span class="tag">wlan.fc.type</span><span class="tag">wlan.fc.retry</span><span class="tag">wlan.fc.subtype</span><span class="tag">wlan_radio.channel</span><span class="tag">wlan_radio.signal_dbm</span><span class="tag">to_ds</span><span class="tag">from_ds</span></p>
+  <p class="small">The DS flag was decomposed into To-DS and From-DS bits. Fields with substantial or class-dependent missingness (such as IP/TCP/UDP fields) were excluded rather than imputed as zero.</p>
+ </section>
+</div>
+
+<div class="col">
+ <section class="card">
+  <h2>4 · Final untouched test results</h2>
+  <p>Baseline Random Forest evaluated across all 5,721,566 test records at probability threshold <strong>0.50</strong>.</p>
+  <div class="kpis">
+   <div class="kpi good"><div class="num">99.05%</div><div class="label">Deauth recall</div></div>
+   <div class="kpi"><div class="num">66.88%</div><div class="label">Deauth precision</div></div>
+   <div class="kpi"><div class="num">79.85%</div><div class="label">Deauth F1-score</div></div>
+   <div class="kpi alert"><div class="num">3,986</div><div class="label">False positives</div></div>
+  </div>
+  <div class="cm" aria-label="Confusion matrix: rows actual Normal and Deauth; columns predicted Normal and Deauth">
+   <div class="axis"></div><div class="axis">Pred. Normal</div><div class="axis">Pred. Deauth</div>
+   <div class="axis">Actual Normal</div><div class="tn"><strong>5,709,455</strong><br>True negative</div><div class="fp"><strong>3,986</strong><br>False positive</div>
+   <div class="axis">Actual Deauth</div><div class="fn"><strong>77</strong><br>False negative</div><div class="tp"><strong>8,048</strong><br>True positive</div>
+  </div>
+  <table class="metrics">
+   <tr><th>Additional metric</th><th>Result</th></tr>
+   <tr><td>Balanced accuracy</td><td>99.4913%</td></tr>
+   <tr><td>Average precision</td><td>0.964010</td></tr>
+   <tr><td>ROC AUC</td><td>0.999946</td></tr>
+   <tr><td>False-positive rate</td><td>0.0698%</td></tr>
+  </table>
+  <div class="callout danger"><strong>Interpretation:</strong> high recall does not mean the alert stream is clean. At this test distribution, only about two-thirds of predicted Deauth records were actually Deauth-labelled. Report precision and the absolute false-positive count alongside recall.</div>
+ </section>
+
+ <section class="card">
+  <h2>5 · Threshold review (validation only)</h2>
+  <p>A separate capture-grouped validation experiment compared thresholds. These values are <strong>not</strong> final-test results and no threshold was automatically promoted.</p>
+  <table class="metrics">
+   <tr><th>Threshold</th><th>Precision</th><th>Recall</th><th>FP</th></tr>
+   <tr><td>0.50</td><td>99.02%</td><td>99.89%</td><td>36</td></tr>
+   <tr><td>0.80</td><td>99.15%</td><td>99.56%</td><td>31</td></tr>
+   <tr><td>0.95</td><td>99.27%</td><td>97.56%</td><td>26</td></tr>
+   <tr><td>0.99</td><td>99.49%</td><td>91.57%</td><td>17</td></tr>
+  </table>
+  <p class="small">Validation partition: 35,367 records, 120 capture groups, but only two Deauth capture groups. Threshold choice requires an explicit operating target and broader independent validation.</p>
+ </section>
+
+ <section class="card">
+  <h2>6 · False-positive investigation</h2>
+  <p><strong>3,774 of 3,986 false positives (94.68%)</strong> came from two Normal-labelled RogueAP captures.</p>
+  <div class="barrow"><span>RogueAP_36</span><div class="track"><div class="fill" style="width:69.2%"></div></div><b>2,609</b></div>
+  <div class="barrow"><span>RogueAP_37</span><div class="track"><div class="fill" style="width:30.9%"></div></div><b>1,165</b></div>
+  <div class="barrow"><span>All others</span><div class="track"><div class="fill" style="width:2.1%;background:#8c9aaa"></div></div><b>212</b></div>
+  <p>All 3,774 RogueAP false positives shared:</p>
+  <ul>
+   <li><code>wlan.fc.type = 0</code> (management)</li>
+   <li><code>wlan.fc.subtype = 12</code> (Deauthentication)</li>
+   <li><code>frame.len = 86</code></li>
+   <li><code>wlan.fc.protected = 0</code></li>
+  </ul>
+  <div class="callout"><strong>Key finding:</strong> the dominant error is structured, not random. Normal-labelled records in these captures contain Deauthentication management frames. A Deauthentication frame by itself does not prove malicious activity.</div>
+ </section>
+</div>
+
+<div class="col">
+ <section class="card">
+  <h2>7 · Original-record matching</h2>
+  <p>The validation script matched model-feature signatures from the false-positive export back to candidate rows in the two original RogueAP capture files.</p>
+  <table class="metrics">
+   <tr><th>Capture</th><th>Unique signatures matched</th><th>Ambiguous candidate rows</th></tr>
+   <tr><td>RogueAP_36</td><td>793 / 793</td><td>2,086</td></tr>
+   <tr><td>RogueAP_37</td><td>791 / 791</td><td>538</td></tr>
+  </table>
+  <p class="small">All signatures matched, but repeated feature signatures can map to multiple packets. The context export includes available timestamps, frame numbers, addresses, sequence numbers, reason-code fields and labels. These matches are candidate sets, not guaranteed one-to-one packet identities.</p>
+ </section>
+
+ <section class="card">
+  <h2>8 · Main limitations</h2>
+  <ul>
+   <li><strong>Only two independent Deauth captures</strong> appear in the held-out test partition. This is insufficient for strong claims about unseen attack environments.</li>
+   <li>The validation split also contains only two Deauth capture groups.</li>
+   <li>The model predicts individual records, not attack episodes or sustained floods.</li>
+   <li>The Normal-labelled RogueAP records require source-label semantics review before changing labels, features or model design.</li>
+   <li>The test set is highly imbalanced; accuracy alone would be misleading.</li>
+  </ul>
+  <div class="callout danger"><strong>Scope boundary:</strong> this is an offline packet-level WIDS experiment. It does not perform live monitor-mode capture, transmit deauthentication frames, disconnect clients, or enforce access-point blocking.</div>
+ </section>
+
+ <section class="card">
+  <h2>9 · Next research steps</h2>
+  <ol>
+   <li>Verify AWID3 label semantics for the affected RogueAP records.</li>
+   <li>Inspect original packet context, including addresses, timestamps, sequence numbers and reason codes.</li>
+   <li>Build a broader capture-grouped validation set with more independent Deauth sessions.</li>
+   <li>Develop temporal/event-level features and measure false alarms per time interval.</li>
+   <li>Evaluate on independent captures and document threshold trade-offs.</li>
+   <li>Keep any authorised mitigation integration separate, reversible and independently tested.</li>
+  </ol>
+ </section>
+
+ <section class="card">
+  <h2>10 · Conclusion</h2>
+  <p>The Random Forest baseline separates many Deauth-labelled records from Normal records on the held-out AWID3 partition, with <strong>99.05% recall</strong>. Its <strong>66.88% precision</strong> and concentrated RogueAP false positives expose a key weakness: packet-level frame signatures are not sufficient to establish malicious intent.</p>
+  <div class="goodbox"><strong>Research takeaway:</strong> move from isolated packet classification toward context-aware, capture-independent, temporal detection before claiming operational WIDS performance.</div>
+ </section>
+
+ <section class="card">
+  <h2>Reproducibility</h2>
+  <p>Dataset: AWID3 CSV export. Model: scikit-learn Random Forest. Split unit: source capture file. Evaluation: complete untouched test partition, chunked at 250,000 records. Random state: 42.</p>
+  <p class="small">Detailed methodology, metrics, feature importance and investigation notes: <strong>docs/DEAUTH_EXPERIMENT_STATUS.md</strong>.</p>
+ </section>
+</div>
+</main>
+<footer>
+ <div>Deauthentication-focused WIDS · AWID3 · Random Forest · 23 Nov 2026</div>
+ <div>Repository: <a href="https://github.com/unclemiltonnotwaffles/wips-ml-prototype">github.com/unclemiltonnotwaffles/wips-ml-prototype</a> · Print at A1 portrait</div>
+</footer>
 </div>
 </body>
 </html>
