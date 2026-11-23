@@ -1,0 +1,7 @@
+field,value,record_count
+source_file,RogueAP_36.csv,2609
+source_file,RogueAP_37.csv,1165
+wlan.fixed.reason_code,7,3774
+Label,Normal,3774
+wlan.fc.type,0,3774
+wlan.fc.subtype,12,3774

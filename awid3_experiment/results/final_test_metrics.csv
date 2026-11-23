@@ -1,0 +1,2 @@
+threshold,records,true_negatives,false_positives,false_negatives,true_positives,deauth_precision,deauth_recall,deauth_f1,balanced_accuracy,false_positive_rate,average_precision,roc_auc,evaluation_partition,threshold_source
+0.5,5721566,5709455,3986,77,8048,0.6687718131959448,0.990523076923077,0.7984523041817551,0.9949127118962515,0.0006976531305740271,0.9640102982279847,0.9999456958263317,untouched_capture_grouped_test,fixed_baseline_0.50_not_tuned_on_test

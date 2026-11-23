@@ -1,0 +1,13 @@
+{
+  "experiment": "AWID3 binary Normal-vs-Deauth packet classifier",
+  "test_threshold": 0.5,
+  "test_threshold_tuned_on_test": false,
+  "raw_dataset_directory": "C:\\Users\\chiwo\\.cache\\kagglehub\\datasets\\suumia\\awid3-dataset\\versions\\1\\CSV",
+  "outputs": [
+    "validation_threshold_sweep.csv",
+    "final_test_metrics.csv",
+    "false_positive_records.csv",
+    "rogueap_original_context.csv",
+    "rogueap_match_quality.csv"
+  ]
+}

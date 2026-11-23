@@ -1,0 +1,3 @@
+source_file,false_positive_signatures,matched_signatures,unmatched_signatures,raw_candidate_rows,candidate_rows,ambiguous_candidate_rows,unique_signatures
+RogueAP_36.csv,793,793,0,2609,2609,2086,793
+RogueAP_37.csv,791,791,0,1165,1165,538,791

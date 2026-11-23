@@ -1,0 +1,14 @@
+metric,value
+test_records,5721566.0
+threshold,0.5
+true_negatives,5709455.0
+false_positives,3986.0
+false_negatives,77.0
+true_positives,8048.0
+balanced_accuracy,0.9949127118962515
+deauth_precision,0.6687718131959448
+deauth_recall,0.990523076923077
+deauth_f1,0.7984523041817551
+false_positive_rate,0.0006976531305740271
+average_precision,0.9640102982279847
+roc_auc,0.9999456958263317

@@ -2,3 +2,7 @@
 __pycache__/
 results/
 *.pyc
+# Publish aggregate AWID3 reports
+!awid3_experiment/results/
+!awid3_experiment/results/*.csv
+!awid3_experiment/results/*.json
